@@ -2,7 +2,7 @@
 // EcoMug: Efficient COsmic MUon Generator                                //
 // Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>              //
 // EcoMug is based on the following work:                                 //
-//                 arXiv:XXXX.XXXX                                        //
+// authors, "title", arXiv:XXXX.XXXX                                      //
 //                                                                        //
 // This program is free software: you can redistribute it and/or modify   //
 // it under the terms of the GNU General Public License as published by   //
@@ -167,7 +167,7 @@ public:
     mMinimumMomentum = momentum;
     ComputeMaxSkyCylinder();
   };
-  // Set minimum generation Momentum
+  // Set maximum generation Momentum
   void SetMaximumMomentum(double momentum) {
     mMaximumMomentum = momentum;
   };
@@ -175,7 +175,7 @@ public:
   void SetMinimumTheta(double theta) {
     mMinimumTheta = theta;
   };
-  // Set minimum generation Theta
+  // Set maximum generation Theta
   void SetMaximumTheta(double theta) {
     mMaximumTheta = theta;
   };
@@ -183,7 +183,7 @@ public:
   void SetMinimumPhi(double phi) {
     mMinimumPhi = phi;
   };
-  // Set minimum generation Theta
+  // Set maximum generation Phi
   void SetMaximumPhi(double phi) {
     mMaximumPhi = phi;
   };
@@ -192,23 +192,23 @@ public:
   double GetMinimumMomentum() const {
     return mMinimumMomentum;
   };
-  // Get minimum generation Momentum
+  // Get maximum generation Momentum
   double GetMaximumMomentum() const {
     return mMaximumMomentum;
   };
-  // Set minimum generation Theta
+  // Get minimum generation Theta
   double GetMinimumTheta() const {
     return mMinimumTheta;
   };
-  // Set minimum generation Theta
+  // Get maximum generation Theta
   double GetMaximumTheta() const {
     return mMaximumTheta;
   };
-  // Set minimum generation Phi
+  // Get minimum generation Phi
   double GetMinimumPhi() const {
     return mMinimumPhi;
   };
-  // Set minimum generation Theta
+  // Get maximum generation Phi
   double GetMaximumPhi() const {
     return mMaximumPhi;
   };
@@ -264,21 +264,18 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods for the half sphere-based generation
   ///////////////////////////////////////////////////////////////
-  // Set sphere radius
+  // Set half-sphere radius
   void SetHSphereRadius(double radius) {
     mHSphereRadius = radius;
   };
-
   // Set half-sphere center position
   void SetHSphereCenterPosition(const std::array<double, 3>& position) {
     mHSphereCenterPosition = position;
   };
-
-  // Get the sphere radius
+  // Get half-sphere radius
   double GetHSphereRadius() const {
     return mHSphereRadius;
   };
-
   // Get half-sphere center position
   const std::array<double, 3>& GetHSphereCenterPosition() const {
     return mHSphereCenterPosition;
@@ -432,6 +429,5 @@ public:
 };
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
-
 
 #endif
