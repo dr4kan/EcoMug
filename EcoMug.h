@@ -410,7 +410,7 @@ public:
         r2  = mRandom.GenerateRandomDouble();
         n = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
-        ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 3.175-2.896)*Pow(Cos(mGenerationTheta), n)*fabs(Sin(mGenerationTheta)*Sin(theta0)*Cos(mGenerationPhi)+Cos(mGenerationTheta)*Cos(theta0))*Sin(mGenerationTheta);
+        ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 3.175-2.896)*Pow(Cos(mGenerationTheta), n)*Sin(mGenerationTheta)*Sin(theta0)*Cos(mGenerationPhi)+Cos(mGenerationTheta)*Cos(theta0)*Sin(mGenerationTheta);
         if (11*r2 < ftheta) accepted = true;
       }
 
