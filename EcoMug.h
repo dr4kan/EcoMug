@@ -89,13 +89,14 @@ private:
   double mMaximumTheta;
   double mMinimumPhi;
   double mMaximumPhi;
-  std::array<double, 3> mSkySize;
+  std::array<double, 2> mSkySize;
   std::array<double, 3> mSkyCenterPosition;
   double mCylinderHeight;
   double mCylinderRadius;
   std::array<double, 3> mCylinderCenterPosition;
   double mHSphereRadius;
   double mMaxFuncSkyCylinder;
+  std::array<double, 3> mHSphereCenterPosition;
   EMRandom mRandom;
 
 public:
@@ -104,8 +105,9 @@ public:
   mGenerationPosition({{0., 0., 0.}}), mGenerationTheta(0.), mGenerationPhi(0.),
   mGenerationMomentum(0.), mMinimumMomentum(0.01), mMaximumMomentum(1000.),
   mMinimumTheta(0.), mMaximumTheta(M_PI/2.), mMinimumPhi(0.), mMaximumPhi(2.*M_PI),
-  mSkySize({{0., 0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
-  mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mMaxFuncSkyCylinder(5.81)
+  mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
+  mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereCenterPosition({{0., 0., 0.}}),
+  mMaxFuncSkyCylinder(5.3176)
   {};
 
   ///////////////////////////////////////////////////////////////
@@ -217,7 +219,7 @@ public:
   // Methods for the plane-based generation
   ///////////////////////////////////////////////////////////////
   // Set sky size
-  void SetSkySize(const std::array<double, 3>& size) {
+  void SetSkySize(const std::array<double, 2>& size) {
     mSkySize = size;
   };
 
@@ -239,7 +241,7 @@ public:
   void SetCylinderHeight(double height) {
     mCylinderHeight = height;
   };
-  // Set cylinder position
+  // Set cylinder center position
   void SetCylinderCenterPosition(const std::array<double, 3>& position) {
     mCylinderCenterPosition = position;
   };
@@ -252,7 +254,7 @@ public:
   double GetCylinderHeight() const {
     return mCylinderHeight;
   };
-  // Get cylinder position
+  // Get cylinder center position
   const std::array<double, 3>& GetCylinderCenterPosition() const {
     return mCylinderCenterPosition;
   };
@@ -267,9 +269,19 @@ public:
     mHSphereRadius = radius;
   };
 
+  // Set half-sphere center position
+  void SetHSphereCenterPosition(const std::array<double, 3>& position) {
+    mHSphereCenterPosition = position;
+  };
+
   // Get the sphere radius
   double GetHSphereRadius() const {
     return mHSphereRadius;
+  };
+
+  // Get half-sphere center position
+  const std::array<double, 3>& GetHSphereCenterPosition() const {
+    return mHSphereCenterPosition;
   };
   ///////////////////////////////////////////////////////////////
 
@@ -308,14 +320,14 @@ private:
   void GeneratePositionSky() {
     mGenerationPosition[0] = mSkySize[0]*mRandom.GenerateRandomDouble() + mSkyCenterPosition[0]-mSkySize[0]/2.;
     mGenerationPosition[1] = mSkySize[1]*mRandom.GenerateRandomDouble() + mSkyCenterPosition[1]-mSkySize[1]/2.;
-    mGenerationPosition[2] = mSkySize[2]*mRandom.GenerateRandomDouble() + mSkyCenterPosition[2]-mSkySize[2]/2.;
+    mGenerationPosition[2] = mSkyCenterPosition[2];
   };
 
   double GeneratePositionCylinder() {
     double phi0            = 2.*M_PI*mRandom.GenerateRandomDouble();
     mGenerationPosition[0] = mCylinderCenterPosition[0] + mCylinderRadius*Cos(phi0);
     mGenerationPosition[1] = mCylinderCenterPosition[1] + mCylinderRadius*Sin(phi0);
-    mGenerationPosition[2] = mCylinderHeight*mRandom.GenerateRandomDouble() + mCylinderHeight/2.;
+    mGenerationPosition[2] = mCylinderCenterPosition[2] + mCylinderHeight*mRandom.GenerateRandomDouble() - mCylinderHeight/2.;
     return phi0;
   };
 
@@ -371,16 +383,21 @@ public:
           r2  = mRandom.GenerateRandomDouble();
           mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
           fphi = fabs(Cos(mGenerationPhi));
-          if (r2 < fphi) accepted = true;
+          if (r2 < fphi) {
+            accepted = true;
+          }
         }
         mGenerationPhi = mGenerationPhi + phi0;
         if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
+
+        // Check if the muon is inward
+        if (Sin(mGenerationTheta)*Cos(mGenerationPhi)*mGenerationPosition[0] + Sin(mGenerationTheta)*Sin(mGenerationPhi)*mGenerationPosition[1] > 0) Generate();
       }
     }
 
     // Half-sphere generation
     if (mGenMethod == HSphere) {
-      // Generation point on the (half-)sphere
+      // Generation point on the half-sphere
       double phi0   = 2.*M_PI*mRandom.GenerateRandomDouble();
       double theta0 = 0.;
       double r0t    = 0.;
@@ -399,9 +416,10 @@ public:
         ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 3.175-2.896)*Pow(Cos(mGenerationTheta), n)*fabs(Sin(mGenerationTheta)*Sin(theta0)*Cos(mGenerationPhi)+Cos(mGenerationTheta)*Cos(theta0))*Sin(mGenerationTheta);
         if (11*r2 < ftheta) accepted = true;
       }
-      mGenerationPosition[0] = mHSphereRadius*Sin(theta0)*Sin(phi0);
-      mGenerationPosition[1] = mHSphereRadius*Cos(theta0)-mHSphereRadius/2.;
-      mGenerationPosition[2] = mHSphereRadius*Sin(theta0)*Cos(phi0);
+
+      mGenerationPosition[0] = mHSphereCenterPosition[0] + mHSphereRadius*Sin(theta0)*Sin(phi0);
+      mGenerationPosition[1] = mHSphereCenterPosition[1] + mHSphereRadius*Cos(theta0)-mHSphereRadius/2.;
+      mGenerationPosition[2] = mHSphereCenterPosition[2] + mHSphereRadius*Sin(theta0)*Cos(phi0);
       mGenerationTheta = M_PI - mGenerationTheta;
       mGenerationPhi = mGenerationPhi + phi0;
       if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
