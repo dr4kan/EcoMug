@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////
-// EcoMug: Efficient COsmic MUon Generator                                //
+// EcoMug: Efficient cosmic MUon Generator                                //
 // Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>              //
 // EcoMug is based on the following work:                                 //
 // authors, "title", arXiv:XXXX.XXXX                                      //
@@ -287,31 +287,7 @@ private:
   void ComputeMaxSkyCylinder() {
     if (mMinimumMomentum < 0.448) return;
     double n = 2.856-0.655*log(mMinimumMomentum);
-    mMaxFuncSkyCylinder = 1600*Pow(mMinimumMomentum+2.68, -3.175)*Pow(mMinimumMomentum, 0.279)*Pow(Cos(0.6968), n+1)*Sin(0.6968);
-  };
-
-  double Sin(double x) const {
-    double x2 = x * x;
-    return (((((-2.05342856289746600727e-08*x2 + 2.70405218307799040084e-06)*x2
-    - 1.98125763417806681909e-04)*x2 + 8.33255814755188010464e-03)*x2
-    - 1.66665772196961623983e-01)*x2 + 9.99999707044156546685e-01)*x;
-  };
-
-  double Cos(double x) const {
-    double x2 = x * x;
-    return ((((-2.21941782786353727022e-07*x2 + 2.42532401381033027481e-05)*x2
-    - 1.38627507062573673756e-03)*x2 + 4.16610337354021107429e-02)*x2
-    - 4.99995582499065048420e-01)*x2 + 9.99999443739537210853e-01;
-  };
-
-  double Pow(double a, double b) const {
-    union {
-      double n;
-      int c[2];
-    } unum = { a };
-    unum.c[1] = (int)(b * (unum.c[1] - 1072632447) + 1072632447);
-    unum.c[0] = 0;
-    return unum.n;
+    mMaxFuncSkyCylinder = 1600*pow(mMinimumMomentum+2.68, -3.175)*pow(mMinimumMomentum, 0.279)*pow(cos(0.6968), n+1)*sin(0.6968);
   };
 
   void GeneratePositionSky() {
@@ -322,8 +298,8 @@ private:
 
   double GeneratePositionCylinder() {
     double phi0            = 2.*M_PI*mRandom.GenerateRandomDouble();
-    mGenerationPosition[0] = mCylinderCenterPosition[0] + mCylinderRadius*Cos(phi0);
-    mGenerationPosition[1] = mCylinderCenterPosition[1] + mCylinderRadius*Sin(phi0);
+    mGenerationPosition[0] = mCylinderCenterPosition[0] + mCylinderRadius*cos(phi0);
+    mGenerationPosition[1] = mCylinderCenterPosition[1] + mCylinderRadius*sin(phi0);
     mGenerationPosition[2] = mCylinderCenterPosition[2] + mCylinderHeight*mRandom.GenerateRandomDouble() - mCylinderHeight/2.;
     return phi0;
   };
@@ -355,12 +331,12 @@ public:
         if (n < 0.1) n = 0.1;
 
         if (mGenMethod == Sky) {
-          ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 0.279)*Pow(Cos(mGenerationTheta), n+1)*Sin(mGenerationTheta);
+          ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n+1)*sin(mGenerationTheta);
           if (mMaxFuncSkyCylinder*r2 < ftheta) accepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
-          ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 0.279)*Pow(Cos(mGenerationTheta), n)*Pow(Sin(mGenerationTheta), 2);
+          ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*pow(sin(mGenerationTheta), 2);
           if (mMaxFuncSkyCylinder*r2 < ftheta) accepted = true;
         }
       }
@@ -379,7 +355,7 @@ public:
           r1p = mRandom.GenerateRandomDouble();
           r2  = mRandom.GenerateRandomDouble();
           mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
-          fphi = fabs(Cos(mGenerationPhi));
+          fphi = fabs(cos(mGenerationPhi));
           if (r2 < fphi) {
             accepted = true;
           }
@@ -388,7 +364,7 @@ public:
         if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
 
         // Check if the muon is inward
-        if (Sin(mGenerationTheta)*Cos(mGenerationPhi)*mGenerationPosition[0] + Sin(mGenerationTheta)*Sin(mGenerationPhi)*mGenerationPosition[1] > 0) Generate();
+        if (sin(mGenerationTheta)*cos(mGenerationPhi)*mGenerationPosition[0] + sin(mGenerationTheta)*sin(mGenerationPhi)*mGenerationPosition[1] > 0) Generate();
       }
     }
 
@@ -410,18 +386,19 @@ public:
         r2  = mRandom.GenerateRandomDouble();
         n = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
-        ftheta = 1600*Pow(mGenerationMomentum+2.68, -3.175)*Pow(mGenerationMomentum, 3.175-2.896)*Pow(Cos(mGenerationTheta), n)*Sin(mGenerationTheta)*Sin(theta0)*Cos(mGenerationPhi)+Cos(mGenerationTheta)*Cos(theta0)*Sin(mGenerationTheta);
+        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 3.175-2.896)*pow(cos(mGenerationTheta), n)*sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0)*sin(mGenerationTheta);
         if (11*r2 < ftheta) accepted = true;
       }
 
-      mGenerationPosition[0] = mHSphereCenterPosition[0] + mHSphereRadius*Sin(theta0)*Sin(phi0);
-      mGenerationPosition[1] = mHSphereCenterPosition[1] + mHSphereRadius*Cos(theta0)-mHSphereRadius/2.;
-      mGenerationPosition[2] = mHSphereCenterPosition[2] + mHSphereRadius*Sin(theta0)*Cos(phi0);
+      mGenerationPosition[0] = mHSphereRadius*sin(theta0)*cos(phi0) + mHSphereCenterPosition[0];
+      mGenerationPosition[1] = mHSphereRadius*sin(theta0)*sin(phi0) + mHSphereCenterPosition[1];
+      mGenerationPosition[2] = mHSphereRadius*cos(theta0) + mHSphereCenterPosition[2];
+
       mGenerationTheta = M_PI - mGenerationTheta;
       mGenerationPhi = mGenerationPhi + phi0;
-      if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
+      if (mGenerationPhi >= 2*M_PI) mGenerationPhi -= 2*M_PI;
       mGenerationPhi += M_PI;
-      if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
+      if (mGenerationPhi >= 2*M_PI) mGenerationPhi -= 2*M_PI;
     }
   };
   ///////////////////////////////////////////////////////////////
