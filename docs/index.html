@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>EcoMug: Main Page</title>
+<title>EcoMug: EcoMug: Efficient COsmic MUon Generator</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">EcoMug
-   &#160;<span id="projectnumber">1.0</span>
+   &#160;<span id="projectnumber">0.9</span>
    </div>
    <div id="projectbrief">Efficient COsmic MUon Generator</div>
   </td>
@@ -62,11 +62,58 @@ $(function() {
 </iframe>
 </div>
 
-<div class="header">
+<div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">EcoMug Documentation</div>  </div>
+<div class="title"><a class="el" href="class_eco_mug.html">EcoMug</a>: Efficient COsmic MUon Generator </div>  </div>
 </div><!--header-->
 <div class="contents">
+<div class="textblock"><p><a class="anchor" id="md_README"></a> <a class="el" href="class_eco_mug.html">EcoMug</a> is a header-only C++11 library for the generation of cosmic muons.</p>
+<h1><a class="anchor" id="autotoc_md1"></a>
+Examples</h1>
+<h2><a class="anchor" id="autotoc_md2"></a>
+Plane-based generation</h2>
+<div class="fragment"><div class="line">EcoMug gen;</div>
+<div class="line">gen.SetUseSky();</div>
+<div class="line">gen.SetSkySize({{10., 10.}});</div>
+<div class="line"> </div>
+<div class="line">for (auto event = 0; event &lt; number_of_events; ++event) {</div>
+<div class="line">  gen.Generate();</div>
+<div class="line">  std::array&lt;double, 3&gt; muon_position = gen.GetGenerationPosition();</div>
+<div class="line">  double muon_p = gen.GetGenerationMomentum();</div>
+<div class="line">  double muon_theta = gen.GetGenerationTheta();</div>
+<div class="line">  double muon_phi = gen.GetGenerationPhi();</div>
+<div class="line">  ...</div>
+<div class="line">}</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md3"></a>
+Cylinder-based generation</h2>
+<div class="fragment"><div class="line">EcoMug gen;</div>
+<div class="line">gen.SetUseCylinder();</div>
+<div class="line">gen.SetCylinderRadius(10.);</div>
+<div class="line">gen.SetCylinderHeight(30.);</div>
+<div class="line"> </div>
+<div class="line">for (auto event = 0; event &lt; number_of_events; ++event) {</div>
+<div class="line">  gen.Generate();</div>
+<div class="line">  std::array&lt;double, 3&gt; muon_position = gen.GetGenerationPosition();</div>
+<div class="line">  double muon_p = gen.GetGenerationMomentum();</div>
+<div class="line">  double muon_theta = gen.GetGenerationTheta();</div>
+<div class="line">  double muon_phi = gen.GetGenerationPhi();</div>
+<div class="line">  ...</div>
+<div class="line">}</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md4"></a>
+Hsphere-based generation</h2>
+<div class="fragment"><div class="line">EcoMug gen;</div>
+<div class="line">gen.SetUseHSphere();</div>
+<div class="line">gen.SetHSphereRadius(30.);</div>
+<div class="line"> </div>
+<div class="line">for (auto event = 0; event &lt; number_of_events; ++event) {</div>
+<div class="line">  gen.Generate();</div>
+<div class="line">  std::array&lt;double, 3&gt; muon_position = gen.GetGenerationPosition();</div>
+<div class="line">  double muon_p = gen.GetGenerationMomentum();</div>
+<div class="line">  double muon_theta = gen.GetGenerationTheta();</div>
+<div class="line">  double muon_phi = gen.GetGenerationPhi();</div>
+<div class="line">  ...</div>
+<div class="line">}</div>
+</div><!-- fragment --> </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
