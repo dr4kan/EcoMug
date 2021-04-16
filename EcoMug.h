@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////
-// EcoMug: Efficient cosmic MUon Generator                                //
+// EcoMug: Efficient COsmic MUon Generator                                //
 // Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>              //
 // EcoMug is based on the following work:                                 //
 // authors, "title", arXiv:XXXX.XXXX                                      //
@@ -376,17 +376,18 @@ public:
       double r0t    = 0.;
       while (!accepted) {
         r0t = mRandom.GenerateRandomDouble();
-        theta0 = acos(r0t);
         r1t = mRandom.GenerateRandomDouble();
-        mGenerationTheta = (mMaximumTheta - mMinimumTheta)*r1t + mMinimumTheta;
         r1m = mRandom.GenerateRandomDouble();
-        mGenerationMomentum = (mMaximumMomentum - mMinimumMomentum)*r1m + mMinimumMomentum;
         r1p = mRandom.GenerateRandomDouble();
-        mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
         r2  = mRandom.GenerateRandomDouble();
+        theta0 = acos(r0t);
+        mGenerationTheta = (mMaximumTheta - mMinimumTheta)*r1t + mMinimumTheta;
+        mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
+        mGenerationMomentum = (mMaximumMomentum - mMinimumMomentum)*r1m + mMinimumMomentum;
         n = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
-        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 3.175-2.896)*pow(cos(mGenerationTheta), n)*sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0)*sin(mGenerationTheta);
+
+        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*fabs(sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0))*sin(mGenerationTheta);
         if (11*r2 < ftheta) accepted = true;
       }
 
