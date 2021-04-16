@@ -25,11 +25,14 @@
 #include <array>
 #include <random>
 
-///////////////////////////////////////////////////////////////
-// Fast generation of random numbers, based on xoroshiro128+.
+//! Fast generation of random numbers
+/*!
+  This class is based on the xoroshiro128+ generator.
+  https://prng.di.unimi.it/
+*/
 ///////////////////////////////////////////////////////////////
 class EMRandom {
-public:
+private:
   EMRandom() {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -43,7 +46,6 @@ public:
     return to_double(x);
   };
 
-private:
   int64_t rotl(const uint64_t x, int k) {
     return (x << k) | (x >> (64 - k));
   };
@@ -70,12 +72,19 @@ private:
 
 
 ///////////////////////////////////////////////////////////////
-// Generation of cosmic muons position, direction and momentum
-// from a plane, cylinder and half-sphere
+/// Generation of cosmic muons position, direction and momentum
+/// from a plane, cylinder and half-sphere
 ///////////////////////////////////////////////////////////////
 class EcoMug {
+  friend class EMRandom;
+
 public:
-  enum EMGeometry {Sky, Cylinder, HSphere};
+  /// Possible generation methods
+  enum EMGeometry {
+    Sky,      ///< generation from a plane (flat sky)
+    Cylinder, ///< generation from a cylinder
+    HSphere   ///< generation from a half-sphere
+  };
 
 private:
   EMGeometry mGenMethod;
@@ -113,19 +122,19 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods to access the parameters of the generated muon
   ///////////////////////////////////////////////////////////////
-  // Get the generation position
+  /// Get the generation position
   const std::array<double, 3>& GetGenerationPosition() const {
     return mGenerationPosition;
   }
-  // Get the generation momentum
+  /// Get the generation momentum
   double GetGenerationMomentum() const {
     return mGenerationMomentum;
   }
-  // Get the generation theta
+  /// Get the generation theta
   double GetGenerationTheta() const {
     return mGenerationTheta;
   }
-  // Get the generation phi
+  /// Get the generation phi
   double GetGenerationPhi() const {
     return mGenerationPhi;
   }
@@ -135,24 +144,24 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods for the geometry of the generation
   ///////////////////////////////////////////////////////////////
-  // Set generation from sky
+  /// Set generation from sky
   void SetUseSky() {
     mGenMethod = Sky;
   };
-  // Set cylindrical generation
+  /// Set cylindrical generation
   void SetUseCylinder() {
     mGenMethod = Cylinder;
   };
-  // Set half-sphere generation
+  /// Set half-sphere generation
   void SetUseHSphere() {
     mGenMethod = HSphere;
   };
-  // Set the generation method (Sky, Cylinder or HSphere)
+  /// Set the generation method (Sky, Cylinder or HSphere)
   void SetGenerationMethod(EMGeometry genM) {
     mGenMethod = genM;
   };
 
-  // Get the generation method (Sky, Cylinder or HSphere)
+  /// Get the generation method (Sky, Cylinder or HSphere)
   EMGeometry GetGenerationMethod() const {
     return mGenMethod;
   };
@@ -162,53 +171,53 @@ public:
   ///////////////////////////////////////////////////////////////
   // Common methods to all geometries
   ///////////////////////////////////////////////////////////////
-  // Set minimum generation Momentum
+  /// Set minimum generation Momentum
   void SetMinimumMomentum(double momentum) {
     mMinimumMomentum = momentum;
     ComputeMaxSkyCylinder();
   };
-  // Set maximum generation Momentum
+  /// Set maximum generation Momentum
   void SetMaximumMomentum(double momentum) {
     mMaximumMomentum = momentum;
   };
-  // Set minimum generation Theta
+  /// Set minimum generation Theta
   void SetMinimumTheta(double theta) {
     mMinimumTheta = theta;
   };
-  // Set maximum generation Theta
+  /// Set maximum generation Theta
   void SetMaximumTheta(double theta) {
     mMaximumTheta = theta;
   };
-  // Set minimum generation Phi
+  /// Set minimum generation Phi
   void SetMinimumPhi(double phi) {
     mMinimumPhi = phi;
   };
-  // Set maximum generation Phi
+  /// Set maximum generation Phi
   void SetMaximumPhi(double phi) {
     mMaximumPhi = phi;
   };
 
-  // Get minimum generation Momentum
+  /// Get minimum generation Momentum
   double GetMinimumMomentum() const {
     return mMinimumMomentum;
   };
-  // Get maximum generation Momentum
+  /// Get maximum generation Momentum
   double GetMaximumMomentum() const {
     return mMaximumMomentum;
   };
-  // Get minimum generation Theta
+  /// Get minimum generation Theta
   double GetMinimumTheta() const {
     return mMinimumTheta;
   };
-  // Get maximum generation Theta
+  /// Get maximum generation Theta
   double GetMaximumTheta() const {
     return mMaximumTheta;
   };
-  // Get minimum generation Phi
+  /// Get minimum generation Phi
   double GetMinimumPhi() const {
     return mMinimumPhi;
   };
-  // Get maximum generation Phi
+  /// Get maximum generation Phi
   double GetMaximumPhi() const {
     return mMaximumPhi;
   };
@@ -218,12 +227,12 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods for the plane-based generation
   ///////////////////////////////////////////////////////////////
-  // Set sky size
+  /// Set sky size
   void SetSkySize(const std::array<double, 2>& size) {
     mSkySize = size;
   };
 
-  // Set sky center position
+  /// Set sky center position
   void SetSkyCenterPosition(const std::array<double, 3>& position) {
     mSkyCenterPosition = position;
   };
@@ -233,28 +242,28 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods for the cylinder-based generation
   ///////////////////////////////////////////////////////////////
-  // Set cylinder radius
+  /// Set cylinder radius
   void SetCylinderRadius(double radius) {
     mCylinderRadius = radius;
   };
-  // Set cylinder height
+  /// Set cylinder height
   void SetCylinderHeight(double height) {
     mCylinderHeight = height;
   };
-  // Set cylinder center position
+  /// Set cylinder center position
   void SetCylinderCenterPosition(const std::array<double, 3>& position) {
     mCylinderCenterPosition = position;
   };
 
-  // Get cylinder radius
+  /// Get cylinder radius
   double GetCylinderRadius() const {
     return mCylinderRadius;
   };
-  // Get cylinder height
+  /// Get cylinder height
   double GetCylinderHeight() const {
     return mCylinderHeight;
   };
-  // Get cylinder center position
+  /// Get cylinder center position
   const std::array<double, 3>& GetCylinderCenterPosition() const {
     return mCylinderCenterPosition;
   };
@@ -264,19 +273,19 @@ public:
   ///////////////////////////////////////////////////////////////
   // Methods for the half sphere-based generation
   ///////////////////////////////////////////////////////////////
-  // Set half-sphere radius
+  /// Set half-sphere radius
   void SetHSphereRadius(double radius) {
     mHSphereRadius = radius;
   };
-  // Set half-sphere center position
+  /// Set half-sphere center position
   void SetHSphereCenterPosition(const std::array<double, 3>& position) {
     mHSphereCenterPosition = position;
   };
-  // Get half-sphere radius
+  /// Get half-sphere radius
   double GetHSphereRadius() const {
     return mHSphereRadius;
   };
-  // Get half-sphere center position
+  /// Get half-sphere center position
   const std::array<double, 3>& GetHSphereCenterPosition() const {
     return mHSphereCenterPosition;
   };
@@ -306,7 +315,7 @@ private:
 
 public:
   ///////////////////////////////////////////////////////////////
-  // Generate a cosmic muon
+  /// Generate a cosmic muon
   ///////////////////////////////////////////////////////////////
   void Generate() {
     bool accepted = false;
