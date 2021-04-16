@@ -26,13 +26,10 @@
 #include <random>
 
 //! Fast generation of random numbers
-/*!
-  This class is based on the xoroshiro128+ generator.
-  https://prng.di.unimi.it/
-*/
-///////////////////////////////////////////////////////////////
+//! This class is based on the xoroshiro128+ generator.
+//! https://prng.di.unimi.it/
 class EMRandom {
-private:
+public:
   EMRandom() {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -71,10 +68,7 @@ private:
 ///////////////////////////////////////////////////////////////
 
 
-///////////////////////////////////////////////////////////////
-/// Generation of cosmic muons position, direction and momentum
-/// from a plane, cylinder and half-sphere
-///////////////////////////////////////////////////////////////
+//! Class for the generation of cosmic muons
 class EcoMug {
   friend class EMRandom;
 
