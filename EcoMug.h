@@ -38,6 +38,11 @@ public:
     s[1] = dis(gen);
   };
 
+  void SetSeed(uint64_t seed) {
+    s[0] = seed;
+    s[1] = seed;
+  };
+
   double GenerateRandomDouble() {
     uint64_t x = next();
     return to_double(x);
@@ -165,6 +170,11 @@ public:
   ///////////////////////////////////////////////////////////////
   // Common methods to all geometries
   ///////////////////////////////////////////////////////////////
+  /// Set the seed for the internal PRNG (if 0 a random seed is used)
+  void SetSeed(uint64_t seed) {
+    if (seed > 0) mRandom.SetSeed(seed);
+  };
+
   /// Set minimum generation Momentum
   void SetMinimumMomentum(double momentum) {
     mMinimumMomentum = momentum;
