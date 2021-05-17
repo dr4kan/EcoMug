@@ -12,10 +12,11 @@ var searchData=
   ['setminimummomentum_32',['SetMinimumMomentum',['../class_eco_mug.html#a0f936c82acbb7edb97b73baec8fd6efc',1,'EcoMug']]],
   ['setminimumphi_33',['SetMinimumPhi',['../class_eco_mug.html#aa4dd4685e85c2f643db4aa8b4af9b9a5',1,'EcoMug']]],
   ['setminimumtheta_34',['SetMinimumTheta',['../class_eco_mug.html#aa5c98a4e67cfcf5ffcd888ca5d8a5e4a',1,'EcoMug']]],
-  ['setskycenterposition_35',['SetSkyCenterPosition',['../class_eco_mug.html#ad234ce82375c8d3d5aa28be0310da4b5',1,'EcoMug']]],
-  ['setskysize_36',['SetSkySize',['../class_eco_mug.html#ad23cc0e41993cbd670c0f0b8a0122fcf',1,'EcoMug']]],
-  ['setusecylinder_37',['SetUseCylinder',['../class_eco_mug.html#a65dc8860d11feae9f1a7595c202935e4',1,'EcoMug']]],
-  ['setusehsphere_38',['SetUseHSphere',['../class_eco_mug.html#a18a2c0aefa068ff1f6b9a98594593ea2',1,'EcoMug']]],
-  ['setusesky_39',['SetUseSky',['../class_eco_mug.html#abe09151809f401745553c1ab17df9a7e',1,'EcoMug']]],
-  ['sky_40',['Sky',['../class_eco_mug.html#ae62c575c33da2b5bbb00d06f323ea2eeafe9c74ece7f193928aefc1c019d5551c',1,'EcoMug']]]
+  ['setseed_35',['SetSeed',['../class_eco_mug.html#a293886c9f509a91552d7f75f1b4620ef',1,'EcoMug']]],
+  ['setskycenterposition_36',['SetSkyCenterPosition',['../class_eco_mug.html#ad234ce82375c8d3d5aa28be0310da4b5',1,'EcoMug']]],
+  ['setskysize_37',['SetSkySize',['../class_eco_mug.html#ad23cc0e41993cbd670c0f0b8a0122fcf',1,'EcoMug']]],
+  ['setusecylinder_38',['SetUseCylinder',['../class_eco_mug.html#a65dc8860d11feae9f1a7595c202935e4',1,'EcoMug']]],
+  ['setusehsphere_39',['SetUseHSphere',['../class_eco_mug.html#a18a2c0aefa068ff1f6b9a98594593ea2',1,'EcoMug']]],
+  ['setusesky_40',['SetUseSky',['../class_eco_mug.html#abe09151809f401745553c1ab17df9a7e',1,'EcoMug']]],
+  ['sky_41',['Sky',['../class_eco_mug.html#ae62c575c33da2b5bbb00d06f323ea2eeafe9c74ece7f193928aefc1c019d5551c',1,'EcoMug']]]
 ];
