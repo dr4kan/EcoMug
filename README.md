@@ -18,6 +18,7 @@ for (auto event = 0; event < number_of_events; ++event) {
   double muon_p = gen.GetGenerationMomentum();
   double muon_theta = gen.GetGenerationTheta();
   double muon_phi = gen.GetGenerationPhi();
+  double muon_charge = gen.GetCharge();
   ...
 }
 ```
@@ -36,6 +37,7 @@ for (auto event = 0; event < number_of_events; ++event) {
   double muon_p = gen.GetGenerationMomentum();
   double muon_theta = gen.GetGenerationTheta();
   double muon_phi = gen.GetGenerationPhi();
+  double muon_charge = gen.GetCharge();
   ...
 }
 ```
@@ -53,6 +55,7 @@ for (auto event = 0; event < number_of_events; ++event) {
   double muon_p = gen.GetGenerationMomentum();
   double muon_theta = gen.GetGenerationTheta();
   double muon_phi = gen.GetGenerationPhi();
+  double muon_charge = gen.GetCharge();
   ...
 }
 ```
