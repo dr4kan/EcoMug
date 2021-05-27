@@ -97,6 +97,7 @@ private:
   double mMaximumTheta;
   double mMinimumPhi;
   double mMaximumPhi;
+  int    mCharge;
   std::array<double, 2> mSkySize;
   std::array<double, 3> mSkyCenterPosition;
   double mCylinderHeight;
@@ -106,6 +107,8 @@ private:
   double mMaxFuncSkyCylinder;
   std::array<double, 3> mHSphereCenterPosition;
   EMRandom mRandom;
+  std::default_random_engine mEngineC;
+  std::discrete_distribution<int> mDiscDistC;
 
 public:
   // Default constructor
@@ -113,10 +116,13 @@ public:
   mGenerationPosition({{0., 0., 0.}}), mGenerationTheta(0.), mGenerationPhi(0.),
   mGenerationMomentum(0.), mMinimumMomentum(0.01), mMaximumMomentum(1000.),
   mMinimumTheta(0.), mMaximumTheta(M_PI/2.), mMinimumPhi(0.), mMaximumPhi(2.*M_PI),
-  mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
+  mCharge(1), mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereCenterPosition({{0., 0., 0.}}),
   mMaxFuncSkyCylinder(5.3176)
-  {};
+  {
+    std::default_random_engine mEngineC(random_device{}());
+    mDiscDistC = std::discrete_distribution<int>({128, 100});
+  };
 
   ///////////////////////////////////////////////////////////////
   // Methods to access the parameters of the generated muon
@@ -124,19 +130,23 @@ public:
   /// Get the generation position
   const std::array<double, 3>& GetGenerationPosition() const {
     return mGenerationPosition;
-  }
+  };
   /// Get the generation momentum
   double GetGenerationMomentum() const {
     return mGenerationMomentum;
-  }
+  };
   /// Get the generation theta
   double GetGenerationTheta() const {
     return mGenerationTheta;
-  }
+  };
   /// Get the generation phi
   double GetGenerationPhi() const {
     return mGenerationPhi;
-  }
+  };
+  /// Get charge
+  int GetCharge() const {
+    return mCharge;
+  };
   ///////////////////////////////////////////////////////////////
 
 
@@ -414,6 +424,9 @@ public:
       mGenerationPhi += M_PI;
       if (mGenerationPhi >= 2*M_PI) mGenerationPhi -= 2*M_PI;
     }
+
+    // Generate the charge
+    mCharge = (mDiscDistC(mEngineC) == 0) ? 1 : -1;
   };
   ///////////////////////////////////////////////////////////////
 
