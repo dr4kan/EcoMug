@@ -48,6 +48,10 @@ public:
     return to_double(x);
   };
 
+  double GenerateRandomDouble(double x1, double x2) {
+    return (x2-x1)*GenerateRandomDouble()+x1;
+  };
+
   int64_t rotl(const uint64_t x, int k) {
     return (x << k) | (x >> (64 - k));
   };
@@ -120,7 +124,7 @@ public:
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereCenterPosition({{0., 0., 0.}}),
   mMaxFuncSkyCylinder(5.3176)
   {
-    std::default_random_engine mEngineC(random_device{}());
+    std::default_random_engine mEngineC(std::random_device{}());
     mDiscDistC = std::discrete_distribution<int>({128, 100});
   };
 
@@ -188,7 +192,6 @@ public:
   /// Set minimum generation Momentum
   void SetMinimumMomentum(double momentum) {
     mMinimumMomentum = momentum;
-    ComputeMaxSkyCylinder();
   };
   /// Set maximum generation Momentum
   void SetMaximumMomentum(double momentum) {
@@ -307,15 +310,9 @@ public:
 
 
 private:
-  void ComputeMaxSkyCylinder() {
-    if (mMinimumMomentum < 0.448) return;
-    double n = 2.856-0.655*log(mMinimumMomentum);
-    mMaxFuncSkyCylinder = 1600*pow(mMinimumMomentum+2.68, -3.175)*pow(mMinimumMomentum, 0.279)*pow(cos(0.6968), n+1)*sin(0.6968);
-  };
-
   void GeneratePositionSky() {
-    mGenerationPosition[0] = mSkySize[0]*mRandom.GenerateRandomDouble() + mSkyCenterPosition[0]-mSkySize[0]/2.;
-    mGenerationPosition[1] = mSkySize[1]*mRandom.GenerateRandomDouble() + mSkyCenterPosition[1]-mSkySize[1]/2.;
+    mGenerationPosition[0] = mRandom.GenerateRandomDouble(mSkyCenterPosition[0]-mSkySize[0]/2., mSkyCenterPosition[0]+mSkySize[0]/2.);
+    mGenerationPosition[1] = mRandom.GenerateRandomDouble(mSkyCenterPosition[1]-mSkySize[1]/2., mSkyCenterPosition[1]+mSkySize[1]/2.);
     mGenerationPosition[2] = mSkyCenterPosition[2];
   };
 
@@ -323,7 +320,7 @@ private:
     double phi0            = 2.*M_PI*mRandom.GenerateRandomDouble();
     mGenerationPosition[0] = mCylinderCenterPosition[0] + mCylinderRadius*cos(phi0);
     mGenerationPosition[1] = mCylinderCenterPosition[1] + mCylinderRadius*sin(phi0);
-    mGenerationPosition[2] = mCylinderCenterPosition[2] + mCylinderHeight*mRandom.GenerateRandomDouble() - mCylinderHeight/2.;
+    mGenerationPosition[2] = mRandom.GenerateRandomDouble(mCylinderCenterPosition[2]-mCylinderHeight/2., mCylinderCenterPosition[2]+mCylinderHeight/2.);
     return phi0;
   };
 
@@ -333,9 +330,6 @@ public:
   ///////////////////////////////////////////////////////////////
   void Generate() {
     bool accepted = false;
-    double r1t    = 0.;
-    double r1m    = 0.;
-    double r1p    = 0.;
     double r2     = 0.;
     double n      = 0.;
     double ftheta = 0.;
@@ -345,22 +339,20 @@ public:
     if (mGenMethod == Sky || mGenMethod == Cylinder) {
       // Generation of the momentum and theta angle
       while (!accepted) {
-        r1t = mRandom.GenerateRandomDouble();
-        r1m = mRandom.GenerateRandomDouble();
         r2  = mRandom.GenerateRandomDouble();
-        mGenerationTheta = (mMaximumTheta - mMinimumTheta)*r1t + mMinimumTheta;
-        mGenerationMomentum = (mMaximumMomentum - mMinimumMomentum)*r1m + mMinimumMomentum;
+        mGenerationTheta = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+        mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
         n = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
 
         if (mGenMethod == Sky) {
           ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n+1)*sin(mGenerationTheta);
-          if (mMaxFuncSkyCylinder*r2 < ftheta) accepted = true;
+          if (9.6*r2 < ftheta) accepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
           ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*pow(sin(mGenerationTheta), 2);
-          if (mMaxFuncSkyCylinder*r2 < ftheta) accepted = true;
+          if (5.9*r2 < ftheta) accepted = true;
         }
       }
       mGenerationTheta = M_PI - mGenerationTheta;
@@ -368,20 +360,16 @@ public:
       // Generation of the position and phi angle
       if (mGenMethod == Sky) {
         GeneratePositionSky();
-        r1p = mRandom.GenerateRandomDouble();
-        mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
+        mGenerationPhi = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
       }
       if (mGenMethod == Cylinder) {
         double phi0 = GeneratePositionCylinder();
         accepted = false;
         while (!accepted) {
-          r1p = mRandom.GenerateRandomDouble();
           r2  = mRandom.GenerateRandomDouble();
-          mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
+          mGenerationPhi = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
           fphi = fabs(cos(mGenerationPhi));
-          if (r2 < fphi) {
-            accepted = true;
-          }
+          if (r2 < fphi) accepted = true;
         }
         mGenerationPhi = mGenerationPhi + phi0;
         if (mGenerationPhi >= 2.*M_PI) mGenerationPhi -= 2.*M_PI;
@@ -398,20 +386,17 @@ public:
       double theta0 = 0.;
       double r0t    = 0.;
       while (!accepted) {
-        r0t = mRandom.GenerateRandomDouble();
-        r1t = mRandom.GenerateRandomDouble();
-        r1m = mRandom.GenerateRandomDouble();
-        r1p = mRandom.GenerateRandomDouble();
-        r2  = mRandom.GenerateRandomDouble();
-        theta0 = acos(r0t);
-        mGenerationTheta = (mMaximumTheta - mMinimumTheta)*r1t + mMinimumTheta;
-        mGenerationPhi = (mMaximumPhi - mMinimumPhi)*r1p + mMinimumPhi;
-        mGenerationMomentum = (mMaximumMomentum - mMinimumMomentum)*r1m + mMinimumMomentum;
-        n = 2.856-0.655*log(mGenerationMomentum);
+        r0t                 = mRandom.GenerateRandomDouble();
+        r2                  = mRandom.GenerateRandomDouble();
+        theta0              = acos(r0t);
+        mGenerationTheta    = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+        mGenerationPhi      = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
+        mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+        n                   = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
 
-        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*fabs(sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0))*sin(mGenerationTheta);
-        if (11*r2 < ftheta) accepted = true;
+        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*(sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0))*sin(mGenerationTheta);
+        if (10.68*r2 < ftheta) accepted = true;
       }
 
       mGenerationPosition[0] = mHSphereRadius*sin(theta0)*cos(phi0) + mHSphereCenterPosition[0];
@@ -421,6 +406,7 @@ public:
       mGenerationTheta = M_PI - mGenerationTheta;
       mGenerationPhi = mGenerationPhi + phi0;
       if (mGenerationPhi >= 2*M_PI) mGenerationPhi -= 2*M_PI;
+
       mGenerationPhi += M_PI;
       if (mGenerationPhi >= 2*M_PI) mGenerationPhi -= 2*M_PI;
     }
