@@ -1,22 +1,24 @@
-////////////////////////////////////////////////////////////////////////////
-// EcoMug: Efficient COsmic MUon Generator                                //
-// Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>              //
-// EcoMug is based on the following work:                                 //
-// authors, "title", arXiv:XXXX.XXXX                                      //
-//                                                                        //
-// This program is free software: you can redistribute it and/or modify   //
-// it under the terms of the GNU General Public License as published by   //
-// the Free Software Foundation, either version 3 of the License, or      //
-// (at your option) any later version.                                    //
-//                                                                        //
-// This program is distributed in the hope that it will be useful,        //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of         //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          //
-// GNU General Public License for more details.                           //
-//                                                                        //
-// You should have received a copy of the GNU General Public License      //
-// along with this program.  If not, see <https://www.gnu.org/licenses/>. //
-////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+// EcoMug: Efficient COsmic MUon Generator                                         //
+// Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>                       //
+// EcoMug is based on the following work:                                          //
+// authors,                                                                        //
+// "EcoMug: an Efficient COsmic MUon Generator for cosmic-ray muons applications", //
+// arXiv:XXXX.XXXX                                                                 //
+//                                                                                 //
+// This program is free software: you can redistribute it and/or modify            //
+// it under the terms of the GNU General Public License as published by            //
+// the Free Software Foundation, either version 3 of the License, or               //
+// (at your option) any later version.                                             //
+//                                                                                 //
+// This program is distributed in the hope that it will be useful,                 //
+// but WITHOUT ANY WARRANTY; without even the implied warranty of                  //
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                   //
+// GNU General Public License for more details.                                    //
+//                                                                                 //
+// You should have received a copy of the GNU General Public License               //
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.          //
+/////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef EcoMug_H
 #define EcoMug_H
@@ -310,6 +312,18 @@ public:
 
 
 private:
+  double F1Cumulative(double x) {
+    return 1. - 8.534790171171021/pow(x + 2.68, 87./40.);
+  };
+  double F1Inverse(double x) {
+    return (2.68 - 2.68*pow(1. - x, 40./87.))/pow(1. - x, 40./87.);
+  };
+
+  double GenerateMomentumF1() {
+    double z = mRandom.GenerateRandomDouble(F1Cumulative(mMinimumMomentum), F1Cumulative(mMaximumMomentum));
+    return F1Inverse(z);
+  };
+
   void GeneratePositionSky() {
     mGenerationPosition[0] = mRandom.GenerateRandomDouble(mSkyCenterPosition[0]-mSkySize[0]/2., mSkyCenterPosition[0]+mSkySize[0]/2.);
     mGenerationPosition[1] = mRandom.GenerateRandomDouble(mSkyCenterPosition[1]-mSkySize[1]/2., mSkyCenterPosition[1]+mSkySize[1]/2.);
@@ -341,18 +355,18 @@ public:
       while (!accepted) {
         r2  = mRandom.GenerateRandomDouble();
         mGenerationTheta = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
-        mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+        mGenerationMomentum = GenerateMomentumF1();
         n = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
 
         if (mGenMethod == Sky) {
-          ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n+1)*sin(mGenerationTheta);
-          if (9.6*r2 < ftheta) accepted = true;
+          ftheta = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n+1)*sin(mGenerationTheta);
+          if (2797*r2 < ftheta) accepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
-          ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*pow(sin(mGenerationTheta), 2);
-          if (5.9*r2 < ftheta) accepted = true;
+          ftheta = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*pow(sin(mGenerationTheta), 2);
+          if (4730*r2 < ftheta) accepted = true;
         }
       }
       mGenerationTheta = M_PI - mGenerationTheta;
@@ -391,12 +405,12 @@ public:
         theta0              = acos(r0t);
         mGenerationTheta    = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
         mGenerationPhi      = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
-        mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+        mGenerationMomentum = GenerateMomentumF1();
         n                   = 2.856-0.655*log(mGenerationMomentum);
         if (n < 0.1) n = 0.1;
 
-        ftheta = 1600*pow(mGenerationMomentum+2.68, -3.175)*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*(sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0))*sin(mGenerationTheta);
-        if (10.68*r2 < ftheta) accepted = true;
+        ftheta = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), n)*(sin(mGenerationTheta)*sin(theta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(theta0))*sin(mGenerationTheta);
+        if (4891*r2 < ftheta) accepted = true;
       }
 
       mGenerationPosition[0] = mHSphereRadius*sin(theta0)*cos(phi0) + mHSphereCenterPosition[0];
