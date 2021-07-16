@@ -2,7 +2,7 @@
 
 EcoMug is a header-only C++11 library for the generation of cosmic muons.
 
-Latest release: [EcoMug v1.2](https://github.com/dr4kan/EcoMug/releases/tag/v1.2)
+Latest release: [EcoMug v1.3](https://github.com/dr4kan/EcoMug/releases/tag/v1.3)
 
 # Examples
 ## Plane-based generation

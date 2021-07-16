@@ -69,7 +69,11 @@ public:
   };
 
   double to_double(uint64_t x) {
-    const union { uint64_t i; double d; } u = { .i = UINT64_C(0x3FF) << 52 | x >> 12 };
+    union U {
+      uint64_t i;
+      double d;
+    };
+    U u = { UINT64_C(0x3FF) << 52 | x >> 12 };
     return u.d - 1.0;
   };
 
