@@ -123,10 +123,9 @@ public:
   mGenerationMomentum(0.), mMinimumMomentum(0.01), mMaximumMomentum(1000.),
   mMinimumTheta(0.), mMaximumTheta(M_PI/2.), mMinimumPhi(0.), mMaximumPhi(2.*M_PI),
   mCharge(1), mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
-  mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereCenterPosition({{0., 0., 0.}}),
-  mMaxFuncSkyCylinder(5.3176)
-  {
-    std::default_random_engine mEngineC(std::random_device{}());
+  mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereRadius(0.),
+  mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
+  mEngineC(std::random_device{}()) {
     mDiscDistC = std::discrete_distribution<int>({128, 100});
   };
 
