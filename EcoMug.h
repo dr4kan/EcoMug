@@ -207,7 +207,8 @@ public:
           distance = fabs(mBestSolution[j] - mPopulation[i][j]);
           mPopulation[i][j] = distance*exp(b*l)*cos(l*2*M_PI) + mBestSolution[j];
         }
-        if (mPopulation[i][j] < mRanges[j][0] || mPopulation[i][j] > mRanges[j][1]) mPopulation[i][j] = mRandom.GenerateRandomDouble(mRanges[j][0], mRanges[j][1]);
+        if (mPopulation[i][j] < mRanges[j][0]) mPopulation[i][j] = mRanges[j][0];
+        if (mPopulation[i][j] > mRanges[j][1]) mPopulation[i][j] = mRanges[j][1];
       }
     }
   }
