@@ -361,6 +361,7 @@ public:
   /// momentum has to be in GeV/c and theta in radians
   void SetDifferentialFlux(std::function<double(double, double)> J) {
     mJ = J;
+    ComputeMaximum();
   };
   /// Compute the maximum of the differential flux for the specified
   /// geometry of generation
