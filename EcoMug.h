@@ -274,6 +274,9 @@ private:
   double mMaxSky;
   double mMaxCyl;
   double mMaxHs;
+  double mMaxSkyCJ;
+  double mMaxCylCJ;
+  double mMaxHsCJ;
   std::function<double(double, double)> mJ;
 
 public:
@@ -364,27 +367,10 @@ public:
     mJ = J;
     ComputeMaximum();
   };
-  /// Compute the maximum of the differential flux for the specified
-  /// geometry of generation
-  void ComputeMaximum() {
-    EMMaximization maximizer(mRandom, mGenMethod);
-    maximizer.SetFunction(mJ);
-    if (mGenMethod == 0) {
-      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
-      mMaxSky = maximizer.Maximize();
-    } else if (mGenMethod == 1) {
-      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
-      mMaxCyl = maximizer.Maximize();
-    } else {
-      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
-      mMaxHs = maximizer.Maximize();
-    }
-  };
   /// Set the seed for the internal PRNG (if 0 a random seed is used)
   void SetSeed(uint64_t seed) {
     if (seed > 0) mRandom.SetSeed(seed);
   };
-
   /// Set minimum generation Momentum
   void SetMinimumMomentum(double momentum) {
     mMinimumMomentum = momentum;
@@ -547,6 +533,21 @@ private:
     mGenerationPosition[2] = mRandom.GenerateRandomDouble(mCylinderCenterPosition[2]-mCylinderHeight/2., mCylinderCenterPosition[2]+mCylinderHeight/2.);
   };
 
+  void ComputeMaximum() {
+    EMMaximization maximizer(mRandom, mGenMethod);
+    maximizer.SetFunction(mJ);
+    if (mGenMethod == 0) {
+      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
+      mMaxSkyCJ = maximizer.Maximize();
+    } else if (mGenMethod == 1) {
+      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
+      mMaxCylCJ = maximizer.Maximize();
+    } else {
+      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
+      mMaxHsCJ = maximizer.Maximize();
+    }
+  };
+
 public:
   ///////////////////////////////////////////////////////////////
   /// Generate a cosmic muon from the pre-defined J
@@ -648,12 +649,12 @@ public:
 
         if (mGenMethod == Sky) {
           mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*cos(mGenerationTheta)*sin(mGenerationTheta);
-          if (mMaxSky*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxSkyCJ*mRandAccRej < mJPrime) mAccepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
           mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*pow(sin(mGenerationTheta), 2)*cos(mGenerationPhi);
-          if (mMaxCyl*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxCylCJ*mRandAccRej < mJPrime) mAccepted = true;
         }
       }
       mGenerationTheta = M_PI - mGenerationTheta;
@@ -691,7 +692,7 @@ public:
         mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
 
         mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*(sin(mTheta0)*sin(mGenerationTheta)*cos(mGenerationPhi) + cos(mTheta0)*cos(mGenerationTheta))*sin(mGenerationTheta);
-        if (mMaxHs*mRandAccRej < mJPrime) mAccepted = true;
+        if (mMaxHsCJ*mRandAccRej < mJPrime) mAccepted = true;
       }
 
       mGenerationPosition[0] = mHSphereRadius*sin(mTheta0)*cos(mPhi0) + mHSphereCenterPosition[0];
