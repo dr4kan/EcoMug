@@ -101,7 +101,15 @@ private:
 
 public:
   EMMaximization(const EMRandom& random, int genMethod) : mRandom(random), mPopSize(200),
-  mNIter(500), mGenMethod(genMethod), m_a(0.), m_a2(0.), mBestCost(-1.) {};
+  mNIter(500), mGenMethod(genMethod), m_a(0.), m_a2(0.), mBestCost(-1.) {
+    mFunc = &DefaultJ;
+  };
+  ///////////////////////////////////////////////////////////////
+
+  static double DefaultJ(double p, double theta) {
+    double n = std::max(0.1, 2.856-0.655*log(p));
+    return 1600*pow(p, 0.279)*pow(cos(theta), n);
+  }
   ///////////////////////////////////////////////////////////////
 
   void SetParameters(double minP, double maxP, double minTheta, double maxTheta) {
@@ -271,12 +279,8 @@ private:
   EMRandom mRandom;
   std::default_random_engine mEngineC;
   std::discrete_distribution<int> mDiscDistC;
-  double mMaxSky;
-  double mMaxCyl;
-  double mMaxHs;
-  double mMaxSkyCJ;
-  double mMaxCylCJ;
-  double mMaxHsCJ;
+  std::array<double, 3> mMaxJ;
+  std::array<double, 3> mMaxCustomJ;
   std::function<double(double, double)> mJ;
 
 public:
@@ -291,9 +295,8 @@ public:
   mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
   mEngineC(std::random_device{}()) {
     mDiscDistC = std::discrete_distribution<int>({128, 100});
-    mMaxSky = maxSkyJFunc();
-    mMaxCyl = maxCylJFunc();
-    mMaxHs  = maxHSJFunc();
+    mMaxJ = {-1., -1., -1.};
+    mMaxCustomJ = {-1., -1., -1.};
   };
 
   ///////////////////////////////////////////////////////////////
@@ -365,7 +368,6 @@ public:
   /// momentum has to be in GeV/c and theta in radians
   void SetDifferentialFlux(std::function<double(double, double)> J) {
     mJ = J;
-    ComputeMaximum();
   };
   /// Set the seed for the internal PRNG (if 0 a random seed is used)
   void SetSeed(uint64_t seed) {
@@ -378,9 +380,6 @@ public:
   /// Set maximum generation Momentum
   void SetMaximumMomentum(double momentum) {
     mMaximumMomentum = momentum;
-    mMaxSky = maxSkyJFunc();
-    mMaxCyl = maxCylJFunc();
-    mMaxHs  = maxHSJFunc();
   };
   /// Set minimum generation Theta
   void SetMinimumTheta(double theta) {
@@ -533,19 +532,25 @@ private:
     mGenerationPosition[2] = mRandom.GenerateRandomDouble(mCylinderCenterPosition[2]-mCylinderHeight/2., mCylinderCenterPosition[2]+mCylinderHeight/2.);
   };
 
-  void ComputeMaximum() {
+  void ComputeMaximumCustomJ() {
     EMMaximization maximizer(mRandom, mGenMethod);
     maximizer.SetFunction(mJ);
-    if (mGenMethod == 0) {
+    if (mGenMethod == 0 || mGenMethod == 1) {
       maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
-      mMaxSkyCJ = maximizer.Maximize();
-    } else if (mGenMethod == 1) {
-      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
-      mMaxCylCJ = maximizer.Maximize();
     } else {
       maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
-      mMaxHsCJ = maximizer.Maximize();
     }
+    mMaxCustomJ[mGenMethod] = maximizer.Maximize();
+  };
+
+  void ComputeMaximum() {
+    EMMaximization maximizer(mRandom, mGenMethod);
+    if (mGenMethod == 0 || mGenMethod == 1) {
+      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
+    } else {
+      maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
+    }
+    mMaxJ[mGenMethod] = maximizer.Maximize();
   };
 
 public:
@@ -554,6 +559,8 @@ public:
   ///////////////////////////////////////////////////////////////
   void Generate() {
     mAccepted = false;
+
+    if (mMaxJ[mGenMethod] < 0) ComputeMaximum();
 
     // Sky or cylinder generation
     if (mGenMethod == Sky || mGenMethod == Cylinder) {
@@ -567,12 +574,12 @@ public:
 
         if (mGenMethod == Sky) {
           mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN+1)*sin(mGenerationTheta);
-          if (mMaxSky*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
           mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN)*pow(sin(mGenerationTheta), 2);
-          if (mMaxCyl*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
         }
       }
       mGenerationTheta = M_PI - mGenerationTheta;
@@ -612,7 +619,7 @@ public:
         if (mN < 0.1) mN = 0.1;
 
         mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN)*(sin(mGenerationTheta)*sin(mTheta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(mTheta0))*sin(mGenerationTheta);
-        if (mMaxHs*mRandAccRej < mJPrime) mAccepted = true;
+        if (mMaxJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
       }
 
       mGenerationPosition[0] = mHSphereRadius*sin(mTheta0)*cos(mPhi0) + mHSphereCenterPosition[0];
@@ -639,6 +646,8 @@ public:
   void GenerateFromCustomJ() {
     mAccepted = false;
 
+    if (mMaxCustomJ[mGenMethod] < 0) ComputeMaximumCustomJ();
+
     // Sky or cylinder generation
     if (mGenMethod == Sky || mGenMethod == Cylinder) {
       // Generation of the momentum and theta angle
@@ -649,12 +658,12 @@ public:
 
         if (mGenMethod == Sky) {
           mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*cos(mGenerationTheta)*sin(mGenerationTheta);
-          if (mMaxSkyCJ*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxCustomJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
         }
 
         if(mGenMethod == Cylinder)  {
           mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*pow(sin(mGenerationTheta), 2)*cos(mGenerationPhi);
-          if (mMaxCylCJ*mRandAccRej < mJPrime) mAccepted = true;
+          if (mMaxCustomJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
         }
       }
       mGenerationTheta = M_PI - mGenerationTheta;
@@ -692,7 +701,7 @@ public:
         mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
 
         mJPrime = mJ(mGenerationMomentum, mGenerationTheta)*(sin(mTheta0)*sin(mGenerationTheta)*cos(mGenerationPhi) + cos(mTheta0)*cos(mGenerationTheta))*sin(mGenerationTheta);
-        if (mMaxHsCJ*mRandAccRej < mJPrime) mAccepted = true;
+        if (mMaxCustomJ[mGenMethod]*mRandAccRej < mJPrime) mAccepted = true;
       }
 
       mGenerationPosition[0] = mHSphereRadius*sin(mTheta0)*cos(mPhi0) + mHSphereCenterPosition[0];
