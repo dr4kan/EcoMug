@@ -4,7 +4,7 @@
 // EcoMug is based on the following work:                                          //
 // D. Pagano, G. Bonomi, A. Donzella, A. Zenoni, G. Zumerle, N. Zurlo,             //
 // "EcoMug: an Efficient COsmic MUon Generator for cosmic-ray muons applications", //
-// arXiv:XXXX.XXXX                                                                 //
+// doi:10.1016/j.nima.2021.165732                                                  //
 //                                                                                 //
 // This program is free software: you can redistribute it and/or modify            //
 // it under the terms of the GNU General Public License as published by            //
