@@ -262,6 +262,14 @@ private:
   double mMinimumPhi;
   double mMaximumPhi;
   int    mCharge;
+  double mCylinderMinPositionPhi;
+  double mCylinderMaxPositionPhi;
+  double mHSphereMinPositionPhi;
+  double mHSphereMaxPositionPhi;
+  double mHSphereMinPositionTheta;
+  double mHSphereMaxPositionTheta;
+  double mHSphereCosMinPositionTheta;
+  double mHSphereCosMaxPositionTheta;
   double mJPrime;
   double mN;
   double mRandAccRej;
@@ -289,7 +297,10 @@ public:
   mGenerationPosition({{0., 0., 0.}}), mGenerationTheta(0.), mGenerationPhi(0.),
   mGenerationMomentum(0.), mMinimumMomentum(0.01), mMaximumMomentum(1000.),
   mMinimumTheta(0.), mMaximumTheta(M_PI/2.), mMinimumPhi(0.), mMaximumPhi(2.*M_PI),
-  mCharge(1), mJPrime(0.), mN(0.), mRandAccRej(0.), mPhi0(0.), mTheta0(0.), mAccepted(false),
+  mCharge(1), mCylinderMinPositionPhi(0.), mCylinderMaxPositionPhi(2.*M_PI),
+  mHSphereMinPositionPhi(0.), mHSphereMaxPositionPhi(2.*M_PI), mHSphereMinPositionTheta(0.),
+  mHSphereMaxPositionTheta(M_PI/2.), mHSphereCosMinPositionTheta(1.), mHSphereCosMaxPositionTheta(0.),
+  mJPrime(0.), mN(0.), mRandAccRej(0.), mPhi0(0.), mTheta0(0.), mAccepted(false),
   mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereRadius(0.),
   mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
@@ -455,7 +466,12 @@ public:
   void SetCylinderCenterPosition(const std::array<double, 3>& position) {
     mCylinderCenterPosition = position;
   };
-
+  void SetCylinderMinPositionPhi(double phi) {
+    mCylinderMinPositionPhi = phi;
+  };
+  void SetCylinderMaxPositionPhi(double phi) {
+    mCylinderMaxPositionPhi = phi;
+  };
   /// Get cylinder radius
   double GetCylinderRadius() const {
     return mCylinderRadius;
@@ -481,6 +497,20 @@ public:
   /// Set half-sphere center position
   void SetHSphereCenterPosition(const std::array<double, 3>& position) {
     mHSphereCenterPosition = position;
+  };
+  void SetHSphereMinPositionPhi(double phi) {
+    mHSphereMinPositionPhi = phi;
+  };
+  void SetHSphereMaxPositionPhi(double phi) {
+    mHSphereMaxPositionPhi = phi;
+  };
+  void SetHSphereMinPositionTheta(double theta) {
+    mHSphereMinPositionTheta = theta;
+    mHSphereCosMinPositionTheta = cos(mHSphereMinPositionTheta);
+  };
+  void SetHSphereMaxPositionTheta(double theta) {
+    mHSphereMaxPositionTheta = theta;
+    mHSphereCosMaxPositionTheta = cos(mHSphereMaxPositionTheta);
   };
   /// Get half-sphere radius
   double GetHSphereRadius() const {
@@ -526,7 +556,7 @@ private:
   };
 
   void GeneratePositionCylinder() {
-    mPhi0                  = 2.*M_PI*mRandom.GenerateRandomDouble();
+    mPhi0                  = mRandom.GenerateRandomDouble(mCylinderMinPositionPhi, mCylinderMaxPositionPhi);
     mGenerationPosition[0] = mCylinderCenterPosition[0] + mCylinderRadius*cos(mPhi0);
     mGenerationPosition[1] = mCylinderCenterPosition[1] + mCylinderRadius*sin(mPhi0);
     mGenerationPosition[2] = mRandom.GenerateRandomDouble(mCylinderCenterPosition[2]-mCylinderHeight/2., mCylinderCenterPosition[2]+mCylinderHeight/2.);
@@ -608,10 +638,10 @@ public:
     // Half-sphere generation
     if (mGenMethod == HSphere) {
       // Generation point on the half-sphere
-      mPhi0      = 2.*M_PI*mRandom.GenerateRandomDouble();
+      mPhi0      = mRandom.GenerateRandomDouble(mHSphereMinPositionPhi, mHSphereMaxPositionPhi);
       while (!mAccepted) {
         mRandAccRej         = mRandom.GenerateRandomDouble();
-        mTheta0             = acos(mRandom.GenerateRandomDouble());
+        mTheta0             = acos(mRandom.GenerateRandomDouble(mHSphereCosMaxPositionTheta, mHSphereCosMinPositionTheta));
         mGenerationTheta    = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
         mGenerationPhi      = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
         mGenerationMomentum = GenerateMomentumF1();
@@ -692,10 +722,10 @@ public:
     // Half-sphere generation
     if (mGenMethod == HSphere) {
       // Generation point on the half-sphere
-      mPhi0                 = 2.*M_PI*mRandom.GenerateRandomDouble();
+      mPhi0                 = mRandom.GenerateRandomDouble(mHSphereMinPositionPhi, mHSphereMaxPositionPhi);
       while (!mAccepted) {
         mRandAccRej         = mRandom.GenerateRandomDouble();
-        mTheta0             = acos(mRandom.GenerateRandomDouble());
+        mTheta0             = acos(mRandom.GenerateRandomDouble(mHSphereCosMaxPositionTheta, mHSphereCosMinPositionTheta));
         mGenerationTheta    = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
         mGenerationPhi      = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
         mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
