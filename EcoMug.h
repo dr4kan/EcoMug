@@ -26,6 +26,7 @@
 #include <math.h>
 #include <array>
 #include <random>
+#include <functional>
 
 //! Fast generation of random numbers
 //! This class is based on the xoroshiro128+ generator.
