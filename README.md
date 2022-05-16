@@ -6,7 +6,7 @@ If you use, or want to refer to, EcoMug please cite the following paper:
 
 > Pagano, D., Bonomi, G., Donzella, A., Zenoni, A., Zumerle, G., & Zurlo, N. (2021). EcoMug: An Efficient COsmic MUon Generator for cosmic-ray muon applications. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment, 1014, 165732.
 
-Latest release: [EcoMug v1.3](https://github.com/dr4kan/EcoMug/releases/tag/v1.3)
+Latest release: [EcoMug v1.3.1](https://github.com/dr4kan/EcoMug/releases/tag/v1.3.1)
 
 
 
