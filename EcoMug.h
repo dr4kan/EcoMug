@@ -278,8 +278,6 @@ private:
   double mTheta0;
   bool   mAccepted;
   double mHorizontalRate;
-  double mIntegralJprimeSphere;
-  double mIntegralJprimeCyl;
   std::array<double, 2> mSkySize;
   std::array<double, 3> mSkyCenterPosition;
   double mCylinderHeight;
@@ -308,8 +306,7 @@ public:
   mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereRadius(0.),
   mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
-  mEngineC(std::random_device{}()), mHorizontalRate(170.), mIntegralJprimeSphere(129.1044),
-  mIntegralJprimeCyl(0.) {
+  mEngineC(std::random_device{}()), mHorizontalRate(170.) {
     mDiscDistC = std::discrete_distribution<int>({128, 100});
     mMaxJ = {-1., -1., -1.};
     mMaxCustomJ = {-1., -1., -1.};
