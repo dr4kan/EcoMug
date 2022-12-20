@@ -277,6 +277,9 @@ private:
   double mPhi0;
   double mTheta0;
   bool   mAccepted;
+  double mHorizontalRate;
+  double mIntegralJprimeSphere;
+  double mIntegralJprimeCyl;
   std::array<double, 2> mSkySize;
   std::array<double, 3> mSkyCenterPosition;
   double mCylinderHeight;
@@ -305,7 +308,8 @@ public:
   mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereRadius(0.),
   mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
-  mEngineC(std::random_device{}()) {
+  mEngineC(std::random_device{}()), mHorizontalRate(170.), mIntegralJprimeSphere(129.1044),
+  mIntegralJprimeCyl(0.) {
     mDiscDistC = std::discrete_distribution<int>({128, 100});
     mMaxJ = {-1., -1., -1.};
     mMaxCustomJ = {-1., -1., -1.};
@@ -375,6 +379,11 @@ public:
   ///////////////////////////////////////////////////////////////
   // Common methods to all geometries
   ///////////////////////////////////////////////////////////////
+  /// Set the rate of cosmic ray muons per square meter through
+  /// a horizontal surface (default value is 170 Hz/m^2)
+  void SetHorizontalRatePerSquareMeter(double rate) {
+    mHorizontalRate = rate;
+  };
   /// Set the differential flux J. Accepted functions are like
   /// double J(double momentum, double theta)
   /// momentum has to be in GeV/c and theta in radians
@@ -410,6 +419,10 @@ public:
     mMaximumPhi = phi;
   };
 
+  /// Get horizontal rate per square meter
+  double GetHorizontalRatePerSquareMeter() const {
+    return mHorizontalRate;
+  };
   /// Get minimum generation Momentum
   double GetMinimumMomentum() const {
     return mMinimumMomentum;
@@ -433,6 +446,13 @@ public:
   /// Get maximum generation Phi
   double GetMaximumPhi() const {
     return mMaximumPhi;
+  };
+  /// Get the estimated time, in seconds, necessary to collect
+  /// the passed number of events. Optionally the the number of 
+  /// points for the Monte Carlo integration can be passed (default: 1e7)
+  double GetEstimatedTime(int nevents, int npoints = 1e7) {
+    double ratio = IntegrateJ(npoints);
+    return nevents/(mHorizontalRate/ratio);
   };
   ///////////////////////////////////////////////////////////////
 
@@ -525,6 +545,44 @@ public:
 
 
 private:
+  double IntegrateJ(int npoints) {
+    ComputeMaximum(HSphere);
+    double maxJp = mMaxJ[HSphere];
+    int acc0  = 0; // acceptance for theta = 0
+    int acc90 = 0; // acceptance for theta = pi/2
+    int acc   = 0; // acceptance for any theta
+
+    for (auto i = 0; i < npoints; ++i) {
+      mRandAccRej         = mRandom.GenerateRandomDouble();
+      mPhi0               = mRandom.GenerateRandomDouble(mHSphereMinPositionPhi, mHSphereMaxPositionPhi);
+      mTheta0             = acos(mRandom.GenerateRandomDouble(mHSphereCosMaxPositionTheta, mHSphereCosMinPositionTheta));
+      mGenerationTheta    = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+      mGenerationPhi      = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
+      mGenerationMomentum = GenerateMomentumF1();
+      mN                  = 2.856-0.655*log(mGenerationMomentum);
+      if (mN < 0.1) mN = 0.1;
+
+      mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN)*(sin(mGenerationTheta)*sin(mTheta0)*cos(mGenerationPhi)+cos(mGenerationTheta)*cos(mTheta0))*sin(mGenerationTheta);
+      if (maxJp*mRandAccRej < mJPrime) acc++;
+
+      mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN)*cos(mGenerationTheta)*sin(mGenerationTheta);
+      if (maxJp*mRandAccRej < mJPrime) acc0++;
+
+      mJPrime = 1600*pow(mGenerationMomentum, 0.279)*pow(cos(mGenerationTheta), mN)*sin(mGenerationTheta)*cos(mGenerationPhi)*sin(mGenerationTheta);
+      if (maxJp*mRandAccRej < mJPrime) acc90++;
+    }
+
+    if (mGenMethod == HSphere) {
+      return (double) acc0/acc;
+    } 
+
+    if (mGenMethod == Cylinder) { 
+      return (double) acc0/acc90;
+    }
+
+    return 1.;
+  };
+
   double F1Cumulative(double x) {
     return 1. - 8.534790171171021/pow(x + 2.68, 87./40.);
   };
@@ -575,13 +633,17 @@ private:
   };
 
   void ComputeMaximum() {
-    EMMaximization maximizer(mRandom, mGenMethod);
-    if (mGenMethod == 0 || mGenMethod == 1) {
+    ComputeMaximum(mGenMethod);
+  };
+
+  void ComputeMaximum(EMGeometry geo) {
+    EMMaximization maximizer(mRandom, geo);
+    if (geo == 0 || geo == 1) {
       maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
     } else {
       maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
     }
-    mMaxJ[mGenMethod] = maximizer.Maximize();
+    mMaxJ[geo] = maximizer.Maximize();
   };
 
 public:
