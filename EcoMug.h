@@ -23,6 +23,17 @@
   #ifndef EcoMug_H
   #define EcoMug_H
 
+  #include <cmath>
+  #include <array>
+  #include <random>
+  #include <functional>
+  #include <iostream>
+
+  #ifndef M_PI
+  # define ECOMUG_M_PI_NOT_DEFINED_IN_CPP_HEADER
+  # define M_PI 3.14159265358979323846
+  #endif
+
   namespace EMUnits {
     // Default units:
     // millimeter              (mm)
@@ -63,11 +74,6 @@
     static const double  eV = 1.e-6*MeV;
   };
 
-  #include <math.h>
-  #include <array>
-  #include <random>
-  #include <functional>
-
   //! Fast generation of random numbers
   //! This class is based on the xoroshiro128+ generator.
   //! https://prng.di.unimi.it/
@@ -76,18 +82,18 @@
     EMRandom() {
       std::random_device rd;
       std::mt19937 gen(rd());
-      std::uniform_int_distribution<uint64_t> dis(0, std::numeric_limits<uint64_t>::max());
+      std::uniform_int_distribution<std::uint64_t> dis(0, std::numeric_limits<std::uint64_t>::max());
       s[0] = dis(gen);
       s[1] = dis(gen);
     };
 
-    void SetSeed(uint64_t seed) {
+    void SetSeed(std::uint64_t seed) {
       s[0] = seed;
       s[1] = seed;
     };
 
     double GenerateRandomDouble() {
-      uint64_t x = next();
+      std::uint64_t x = next();
       return to_double(x);
     };
 
@@ -111,30 +117,30 @@
 
     };
 
-    int64_t rotl(const uint64_t x, int k) {
+    std::int64_t rotl(const std::uint64_t x, int k) {
       return (x << k) | (x >> (64 - k));
     };
 
-    uint64_t next() {
-      const uint64_t s0 = s[0];
-      uint64_t s1 = s[1];
-      const uint64_t result = s0 + s1;
+    std::uint64_t next() {
+      const std::uint64_t s0 = s[0];
+      std::uint64_t s1 = s[1];
+      const std::uint64_t result = s0 + s1;
       s1 ^= s0;
       s[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14);
       s[1] = rotl(s1, 36);
       return result;
     };
 
-    double to_double(uint64_t x) {
+    double to_double(std::uint64_t x) {
       union U {
-        uint64_t i;
+        std::uint64_t i;
         double d;
       };
       U u = { UINT64_C(0x3FF) << 52 | x >> 12 };
       return u.d - 1.0;
     };
 
-    uint64_t s[2];
+    std::uint64_t s[2];
   };
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
@@ -145,8 +151,8 @@
   class EMMaximization {
   private:
     EMRandom mRandom;
-    size_t mPopSize;
-    size_t mNIter;
+    std::size_t mPopSize;
+    std::size_t mNIter;
     int    mGenMethod; // 0 = sky, 1 = cylinder, 2 = hspere
     double m_a;
     double m_a2;
@@ -184,12 +190,12 @@
     }
     ///////////////////////////////////////////////////////////////
 
-    void SetPopulationSize(size_t ps) {
+    void SetPopulationSize(std::size_t ps) {
       mPopSize = ps;
     }
     ///////////////////////////////////////////////////////////////
 
-    void SetNIterations(size_t nit) {
+    void SetNIterations(std::size_t nit) {
       mNIter = nit;
     }
     ///////////////////////////////////////////////////////////////
@@ -228,7 +234,7 @@
 
     void Evaluate() {
       double value;
-      for (size_t i = 0; i < mPopSize; ++i) {
+      for (std::size_t i = 0; i < mPopSize; ++i) {
         value = Evaluate(mPopulation[i]);
         if (value > mBestCost) {
           mBestCost = value;
@@ -239,18 +245,18 @@
     ///////////////////////////////////////////////////////////////
 
     void Init() {
-      size_t dim = mRanges.size();
+      std::size_t dim = mRanges.size();
       mPopulation.resize(mPopSize);
-      for (size_t i = 0; i < mPopSize; ++i) {
+      for (std::size_t i = 0; i < mPopSize; ++i) {
         mPopulation[i].resize(dim);
-        for (size_t j = 0; j < dim; ++j) {
+        for (std::size_t j = 0; j < dim; ++j) {
           mPopulation[i][j] = mRandom.GenerateRandomDouble(mRanges[j][0], mRanges[j][1]);
         }
       }
     }
     ///////////////////////////////////////////////////////////////
 
-    void UpdateParameters(size_t t) {
+    void UpdateParameters(std::size_t t) {
       m_a  = 2. - t*(2./mNIter);
       m_a2 = -1. + t*((-1.)/mNIter);
     }
@@ -259,7 +265,7 @@
     void Move() {
       double r1, r2, A, C, b, l, rw, p, D_tmp, D_best, distance;
       std::vector<double> tmp;
-      for (size_t i = 0; i < mPopulation.size(); ++i) {
+      for (std::size_t i = 0; i < mPopulation.size(); ++i) {
         r1 = mRandom.GenerateRandomDouble();
         r2 = mRandom.GenerateRandomDouble();
         A  = 2*m_a*r1-m_a;
@@ -268,7 +274,7 @@
         l  = (m_a2-1)*mRandom.GenerateRandomDouble()+1;
         p  = mRandom.GenerateRandomDouble();
 
-        for (size_t j = 0; j < mPopulation[0].size(); ++j) {
+        for (std::size_t j = 0; j < mPopulation[0].size(); ++j) {
           if (p < 0.5) {
             if (fabs(A) >= 1) {
               rw = floor(mRandom.GenerateRandomDouble()*mPopulation.size());
@@ -293,14 +299,14 @@
     double Maximize() {
       Init();
       Evaluate();
-      for (size_t iter = 1; iter < mNIter; ++iter) {
+      for (std::size_t iter = 1; iter < mNIter; ++iter) {
         UpdateParameters(iter);
         Move();
         Evaluate();
       }
-      cout << "Solution: ";
-      for (auto i = 0; i < mBestSolution.size(); ++i) cout << mBestSolution[i] << " ";
-      cout << endl;
+      std::cout << "Solution: ";
+      for (auto i = 0; i < mBestSolution.size(); ++i) std::cout << mBestSolution[i] << " ";
+      std::cout << std::endl;
       return mBestCost;
     }
   };
@@ -462,7 +468,7 @@
       mJ = J;
     };
     /// Set the seed for the internal PRNG (if 0 a random seed is used)
-    void SetSeed(uint64_t seed) {
+    void SetSeed(std::uint64_t seed) {
       if (seed > 0) mRandom.SetSeed(seed);
     };
     /// Set minimum generation Momentum
@@ -821,7 +827,7 @@
     void ComputeMaximum(EMGeometry geo) {
       EMMaximization maximizer(mRandom, geo);
       if (geo == 0 || geo == 1) {
-        cout << "parameters: " << mMinimumMomentum << " - " << mMaximumMomentum << " - " << mMinimumTheta << " - " << mMaximumTheta << endl;
+        std::cout << "parameters: " << mMinimumMomentum << " - " << mMaximumMomentum << " - " << mMinimumTheta << " - " << mMaximumTheta << std::endl;
         maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta);
       } else {
         maximizer.SetParameters(mMinimumMomentum, mMaximumMomentum, mMinimumTheta, mMaximumTheta, mMinimumPhi, mMaximumPhi);
@@ -1000,5 +1006,10 @@
   };
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
+
+  #ifdef ECOMUG_M_PI_NOT_DEFINED_IN_CPP_HEADER
+  # undef M_PI
+  # undef ECOMUG_M_PI_NOT_DEFINED_IN_CPP_HEADER
+  #endif
 
   #endif
