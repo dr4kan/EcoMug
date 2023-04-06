@@ -27,7 +27,6 @@
 #include <chrono>
 
 using namespace std; 
-using namespace EMUnits;
 
 class ErrorsUtility {
   public:
@@ -99,25 +98,21 @@ void SuiteNo1(int number_of_events) {
   
   EcoMug genPlane;
   genPlane.SetUseSky();
-  genPlane.SetSkySize({{200.*cm, 200.*cm}});
-  genPlane.SetSkyCenterPosition({0., 0., 1.*mm});
+  genPlane.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+  genPlane.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
 
   EcoMug genHSphere;
   genHSphere.SetUseHSphere();
-  genHSphere.SetHSphereRadius(200*cm);
+  genHSphere.SetHSphereRadius(200*EMUnits::cm);
   genHSphere.SetHSphereCenterPosition({0., 0., 0.});
 
-  double offsetX = -0.*cm;
-  double offsetY = -0.*cm;
+  double offsetX = -0.*EMUnits::cm;
+  double offsetY = -0.*EMUnits::cm;
 
-  TVector3 P1 = {-50.*cm + offsetX, -50.*cm + offsetY, 0.};
-  TVector3 P2 = { 50.*cm + offsetX, -50.*cm + offsetY, 0.};
-  TVector3 P3 = { 50.*cm + offsetX,  50.*cm + offsetY, 0.};
+  TVector3 P1 = {-50.*EMUnits::cm + offsetX, -50.*EMUnits::cm + offsetY, 0.};
+  TVector3 P2 = { 50.*EMUnits::cm + offsetX, -50.*EMUnits::cm + offsetY, 0.};
+  TVector3 P3 = { 50.*EMUnits::cm + offsetX,  50.*EMUnits::cm + offsetY, 0.};
   PlaneDet detector(P1, P2, P3);
-
-  cout << "OFFSET (x,y): " << offsetX << ", " << offsetY << endl;
-
-  cout << "Area = " << detector.GetArea()/m2 << endl;
 
   auto n_gen_events  = 0;
   auto n_good_events = 0;
@@ -142,11 +137,8 @@ void SuiteNo1(int number_of_events) {
   cout << "\n--- Generation from horizontal plane ---" << endl;
   cout << "number of generated muons               = " << n_gen_events << endl;
   cout << "number of muons through the detector    = " << n_good_events << endl;
-  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genPlane.GetGenSurfaceArea()/m2) << endl;
-  cout << "Estimated time [s]                      = " << n_gen_events/(genPlane.GetGenSurfaceArea()/m2)/genPlane.GetHorizontalRate()/hertz*m2 << endl;
-  // cout << "horizonthal generation surface are [m2] = " << genPlane.GetHorGenSurfaceArea()/m2 << endl;
-  // cout << "generation rate [Hz/m2]                 = " << genPlane.GetAverageGenRate()/hertz*m2 << endl;
-  // cout << "estimated time of data taking [s]       = " << genPlane.GetEstimatedTime(n_gen_events)/s << endl;
+  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genPlane.GetGenSurfaceArea()/EMUnits::m2) << endl;
+  cout << "Estimated time [s]                      = " << genPlane.GetEstimatedTime(n_gen_events) << endl;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -178,15 +170,20 @@ void SuiteNo1(int number_of_events) {
   cout << "\n--- Generation from half-sphere ---" << endl;
   cout << "number of generated muons               = " << n_gen_events << endl;
   cout << "number of muons through the detector    = " << n_good_events << endl;
-  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genHSphere.GetGenSurfaceArea()/m2) << endl;
+  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genHSphere.GetGenSurfaceArea()/EMUnits::m2) << endl;
   cout << "horizonthal to half-spherical rate      = " << (n_good_events/detector.GetArea())/(n_gen_events/genHSphere.GetGenSurfaceArea()) << endl;
-  cout << "Estimated time [s]                      = " << n_gen_events/(genHSphere.GetGenSurfaceArea()/m2)/genPlane.GetHorizontalRate()/hertz*m2 << endl;
-  // cout << "generation rate [Hz/m2]                 = " << genHSphere.GetAverageGenRate()/hertz*m2 << endl;
-  // cout << "estimated time of data taking [s]       = " << genHSphere.GetEstimatedTime(n_gen_events)/s << endl;
+  cout << "Estimated time [s]                      = " << genHSphere.GetEstimatedTime(n_gen_events) << endl;
 
   cout << endl;
   gApplication->Terminate();
 };
+
+double J(double p, double theta) {
+  double A = 0.14*pow(p, -2.7);
+  double B = 1. / (1. + 1.1*p*cos(theta)/115.);
+  double C = 0.054 / (1. + 1.1*p*cos(theta)/850.);
+  return A*(B+C);
+}
 
 void SuiteNo2(int number_of_events) {
   // ----------------------------------------
@@ -195,28 +192,37 @@ void SuiteNo2(int number_of_events) {
 
   EcoMug genPlane;
   genPlane.SetUseSky();
-  genPlane.SetSkySize({{200.*cm, 200.*cm}});
-  genPlane.SetSkyCenterPosition({0., 0., 1.*mm});
+  genPlane.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+  genPlane.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
 
   EcoMug genCylinder;
   genCylinder.SetUseCylinder();
-  genCylinder.SetCylinderRadius(100.*cm);
-  genCylinder.SetCylinderHeight(10.*m);
-  genPlane.SetCylinderCenterPosition({0., 0., 5.*m});
+  genCylinder.SetCylinderRadius(100.*EMUnits::cm);
+  genCylinder.SetCylinderHeight(10.*EMUnits::m);
+  genPlane.SetCylinderCenterPosition({0., 0., 5.*EMUnits::m});
 
   EcoMug genHSphere;
   genHSphere.SetUseHSphere();
-  genHSphere.SetHSphereRadius(300*cm);
+  genHSphere.SetHSphereRadius(300*EMUnits::cm);
   genHSphere.SetHSphereCenterPosition({0., 0., 0.});
 
-  double rateSky, rateCyl, rateHS, errorSky, errorCyl, errorHS;
-  genPlane.GetAverageGenRate(rateSky, errorSky, 1e7);
-  genCylinder.GetAverageGenRate(rateCyl, errorCyl, 1e7);
-  genHSphere.GetAverageGenRate(rateHS, errorHS, 1e7);
+  EcoMug genCustom;
+  genCustom.SetUseSky();
+  genCustom.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+  genCustom.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+  genCustom.SetDifferentialFlux(&J);
+
+  double rateSky, rateCyl, rateHS, rateCustom, errorSky, errorCyl, errorHS, errorCustom;
+  genPlane.GetAverageGenRateAndError(rateSky, errorSky, 1e7);
+  genCylinder.GetAverageGenRateAndError(rateCyl, errorCyl, 1e7);
+  genHSphere.GetAverageGenRateAndError(rateHS, errorHS, 1e7);
+  genCustom.GetAverageGenRateAndError(rateCustom, errorCustom, 1e7);
 
   cout << "rate sky           = " << rateSky << " +- " << errorSky << endl;
   cout << "rate cylinder      = " << rateCyl << " +- " << errorCyl << endl;
   cout << "rate half-sphere   = " << rateHS << " +- " << errorHS << endl;
+  cout << "rate custom J      = " << rateCustom << " +- " << errorCustom << endl;
+  cout << "time custom J      = " << genCustom.GetEstimatedTime(10000) << endl;
   cout << "ratio (sky-to-cyl) = " << rateSky/rateCyl << " +- " << ErrorsUtility::ErrorRatio(rateSky, rateCyl, errorSky, errorCyl) << endl;
   cout << "ratio (sky-to-hs)  = " << rateSky/rateHS << " +- " << ErrorsUtility::ErrorRatio(rateSky, rateHS, errorSky, errorHS) << endl;
 

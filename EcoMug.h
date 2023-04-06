@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // EcoMug: Efficient COsmic MUon Generator                                         //
-// Copyright (C) 2021 Davide Pagano <davide.pagano@unibs.it>                       //
+// Copyright (C) 2023 Davide Pagano <davide.pagano@unibs.it>                       //
 // EcoMug is based on the following work:                                          //
 // D. Pagano, G. Bonomi, A. Donzella, A. Zenoni, G. Zumerle, N. Zurlo,             //
 // "EcoMug: an Efficient COsmic MUon Generator for cosmic-ray muons applications", //
@@ -332,6 +332,7 @@ private:
   double mHSphereRadius;
   double mMaxFuncSkyCylinder;
   std::array<double, 3> mHSphereCenterPosition;
+  bool mCustomJ;
   EMRandom mRandom;
   std::default_random_engine mEngineC;
   std::discrete_distribution<int> mDiscDistC;
@@ -351,7 +352,7 @@ public:
   mJPrime(0.), mN(0.), mRandAccRej(0.), mPhi0(0.), mTheta0(0.), mAccepted(false),
   mSkySize({{0., 0.}}), mSkyCenterPosition({{0., 0., 0.}}), mCylinderHeight(0.),
   mCylinderRadius(0.), mCylinderCenterPosition({{0., 0., 0.}}), mHSphereRadius(0.),
-  mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}),
+  mMaxFuncSkyCylinder(5.3176), mHSphereCenterPosition({{0., 0., 0.}}), mCustomJ(false),
   mEngineC(std::random_device{}()) {
     mDiscDistC = std::discrete_distribution<int>({128, 100});
     mMaxJ = {-1., -1., -1.};
@@ -427,6 +428,7 @@ public:
   /// momentum has to be in GeV/c and theta in radians
   void SetDifferentialFlux(std::function<double(double, double)> J) {
     mJ = J;
+    mCustomJ = true;
   };
   /// Set the seed for the internal PRNG (if 0 a random seed is used)
   void SetSeed(std::uint64_t seed) {
@@ -507,7 +509,13 @@ public:
   /// Get the average rate of cosmic muons as well the error on it
   /// The optional parameter npoints defines the number
   /// of points to be used in the MC integration of the J'
-  void GetAverageGenRate(double &rate, double &error, int npoints = 1e7) {
+  void GetAverageGenRateAndError(double &rate, double &error, int npoints = 1e7) {
+    // Only works for the default flux definition
+    if (mCustomJ) {
+      rate = 0.;
+      error = 0;
+      return;
+    }
     // 129.0827 is the integral of the J'prime for the sky in
     // the full range of theta, phi and up to 3 TeV in energy
     double k = mHorizontalRate/129.0827; 
@@ -520,6 +528,19 @@ public:
     }
     rate *= k;
     error *= k;
+  };
+  /// Get the average rate of cosmic muons 
+  /// The optional parameter npoints defines the number
+  /// of points to be used in the MC integration of the J'
+  double GetAverageGenRate(int npoints = 1e7) {
+    double rate, error;
+    GetAverageGenRateAndError(rate, error, npoints);
+    return rate;
+  };
+  /// Get the estimated corresponding to the provided statistics
+  double GetEstimatedTime(int nmuons) {
+    if (mCustomJ) return 0.;
+    return (nmuons/(GetGenSurfaceArea()/EMUnits::m2))/(GetAverageGenRate()/EMUnits::hertz*EMUnits::m2);
   };
   ///////////////////////////////////////////////////////////////
 
