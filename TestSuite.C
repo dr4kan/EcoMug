@@ -23,36 +23,21 @@
   /////////////////////////////////////////////////////////////////////////////////////
 
 #include "EcoMug.h"
+#include <ctime>
+#include <chrono>
+
 using namespace std; 
-using namespace EMUnits; 
+using namespace EMUnits;
 
-Bool_t IsDetCrossed(TVector3 P1, TVector3 P2, TVector3 P3, TVector3 Ro, TVector3 Po, TVector3 &intercept) {
-  TMatrixD* num = new TMatrixD(4,4);
-  (*num)(0,0) = 1.;       (*num)(0,1) = 1.;       (*num)(0,2) = 1.;       (*num)(0,3) = 1.;
-  (*num)(1,0) = P1.X();   (*num)(1,1) = P2.X();   (*num)(1,2) = P3.X();   (*num)(1,3) = Ro.X();
-  (*num)(2,0) = P1.Y();   (*num)(2,1) = P2.Y();   (*num)(2,2) = P3.Y();   (*num)(2,3) = Ro.Y();
-  (*num)(3,0) = P1.Z();   (*num)(3,1) = P2.Z();   (*num)(3,2) = P3.Z();   (*num)(3,3) = Ro.Z();
-
-  TMatrixD* den = new TMatrixD(4,4);
-  (*den)(0,0) = 1.;       (*den)(0,1) = 1.;       (*den)(0,2) = 1.;       (*den)(0,3) = 0.;
-  (*den)(1,0) = P1.X();   (*den)(1,1) = P2.X();   (*den)(1,2) = P3.X();   (*den)(1,3) = Po.X();
-  (*den)(2,0) = P1.Y();   (*den)(2,1) = P2.Y();   (*den)(2,2) = P3.Y();   (*den)(2,3) = Po.Y();
-  (*den)(3,0) = P1.Z();   (*den)(3,1) = P2.Z();   (*den)(3,2) = P3.Z();   (*den)(3,3) = Po.Z();
-
-  if(std::fabs(den->Determinant())<1.e-9) return false;
-
-  Double_t t = -num->Determinant()/den->Determinant();
-  intercept = Ro + Po*t;
-  if (std::fabs(intercept.Y()) <= P3.Y() && intercept.Z() <= P3.Z() && intercept.Z() >= 0) return true;
-  return false;
+class ErrorsUtility {
+  public:
+  static double ErrorRatio(double A, double B, double errA, double errB, double cov = 0) {
+    double f = A/B;
+    return std::fabs(f)*std::sqrt(std::pow(errA/A, 2) + std::pow(errB/B, 2) - 2*cov/(A*B));
+  }
 };
 
-void SuiteNo1(int number_of_events) {
-  // ----------------------------------------
-  //               Suite No. 1
-  // ----------------------------------------
-  // 1 m2 horizontal plane detector
-  //
+class PlaneDet {
   //               / y
   //              /
   //             /         P3
@@ -63,8 +48,53 @@ void SuiteNo1(int number_of_events) {
   // /                 /
   // ------------------
   // P1               P2
-  //
-  // Example: root -l TestSuite.C\(1\,10000\)
+public:
+
+  PlaneDet(const TVector3 &p1, const TVector3 &p2, const TVector3 &p3) {
+    mP1 = p1; 
+    mP2 = p2; 
+    mP3 = p3; 
+  };
+
+  double GetArea() const {
+    double dx = std::max({mP1.X(), mP2.X(), mP3.X()}) - std::min({mP1.X(), mP2.X(), mP3.X()});
+    double dy = std::max({mP1.Y(), mP2.Y(), mP3.Y()}) - std::min({mP1.Y(), mP2.Y(), mP3.Y()});
+    return dx*dy;
+  };
+
+  bool IsCrossed(TVector3 Ro, TVector3 Po) {
+    TMatrixD* num = new TMatrixD(4,4);
+    (*num)(0,0) = 1.;        (*num)(0,1) = 1.;        (*num)(0,2) = 1.;        (*num)(0,3) = 1.;
+    (*num)(1,0) = mP1.X();   (*num)(1,1) = mP2.X();   (*num)(1,2) = mP3.X();   (*num)(1,3) = Ro.X();
+    (*num)(2,0) = mP1.Y();   (*num)(2,1) = mP2.Y();   (*num)(2,2) = mP3.Y();   (*num)(2,3) = Ro.Y();
+    (*num)(3,0) = mP1.Z();   (*num)(3,1) = mP2.Z();   (*num)(3,2) = mP3.Z();   (*num)(3,3) = Ro.Z();
+
+    TMatrixD* den = new TMatrixD(4,4);
+    (*den)(0,0) = 1.;        (*den)(0,1) = 1.;        (*den)(0,2) = 1.;        (*den)(0,3) = 0.;
+    (*den)(1,0) = mP1.X();   (*den)(1,1) = mP2.X();   (*den)(1,2) = mP3.X();   (*den)(1,3) = Po.X();
+    (*den)(2,0) = mP1.Y();   (*den)(2,1) = mP2.Y();   (*den)(2,2) = mP3.Y();   (*den)(2,3) = Po.Y();
+    (*den)(3,0) = mP1.Z();   (*den)(3,1) = mP2.Z();   (*den)(3,2) = mP3.Z();   (*den)(3,3) = Po.Z();
+
+    if(std::fabs(den->Determinant())<1.e-9) return false;
+
+    Double_t t = -num->Determinant()/den->Determinant();
+    TVector3 intercept = Ro + Po*t;
+
+    if ((intercept.Y() <= mP3.Y() && intercept.Y() >= mP2.Y()) &&
+        (intercept.X() <= mP2.X() && intercept.X() >= mP1.X())) return true;
+
+    return false;
+  };
+
+private:
+  TVector3 mP1;
+  TVector3 mP2;
+  TVector3 mP3;
+};
+
+void SuiteNo1(int number_of_events) {
+  // ----------------------------------------
+  //               Suite No. 1
   // ----------------------------------------
   
   EcoMug genPlane;
@@ -74,12 +104,20 @@ void SuiteNo1(int number_of_events) {
 
   EcoMug genHSphere;
   genHSphere.SetUseHSphere();
-  genHSphere.SetHSphereRadius(300*cm);
+  genHSphere.SetHSphereRadius(200*cm);
   genHSphere.SetHSphereCenterPosition({0., 0., 0.});
 
-  TVector3 P1 = {-50.*cm, -50.*cm, 0.};
-  TVector3 P2 = { 50.*cm, -50.*cm, 0.};
-  TVector3 P3 = { 50.*cm,  50.*cm, 0.};
+  double offsetX = -0.*cm;
+  double offsetY = -0.*cm;
+
+  TVector3 P1 = {-50.*cm + offsetX, -50.*cm + offsetY, 0.};
+  TVector3 P2 = { 50.*cm + offsetX, -50.*cm + offsetY, 0.};
+  TVector3 P3 = { 50.*cm + offsetX,  50.*cm + offsetY, 0.};
+  PlaneDet detector(P1, P2, P3);
+
+  cout << "OFFSET (x,y): " << offsetX << ", " << offsetY << endl;
+
+  cout << "Area = " << detector.GetArea()/m2 << endl;
 
   auto n_gen_events  = 0;
   auto n_good_events = 0;
@@ -98,22 +136,23 @@ void SuiteNo1(int number_of_events) {
       muon_ptot*cos(muon_theta)
     };
 
-    TVector3 layer_1_v, layer_2_v, layer_3_v;
-
-    if (!IsDetCrossed(P1, P2, P3, muon_origin, muon_p, layer_1_v)) continue;
+    if (!detector.IsCrossed(muon_origin, muon_p)) continue;
     n_good_events++;
   }
   cout << "\n--- Generation from horizontal plane ---" << endl;
-  cout << "number of generated muons            = " << n_gen_events << endl;
-  cout << "number of muons through the detector = " << n_good_events << endl;
-  cout << "generation surface are [m2]          = " << genPlane.GetGenSurfaceArea()/m2 << endl;
-  cout << "generation rate [Hz/m2]              = " << genPlane.GetAverageGenRate()/hertz*m2 << endl;
-  cout << "estimated time of data taking [s]    = " << genPlane.GetEstimatedTime(n_gen_events)/s << endl;
+  cout << "number of generated muons               = " << n_gen_events << endl;
+  cout << "number of muons through the detector    = " << n_good_events << endl;
+  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genPlane.GetGenSurfaceArea()/m2) << endl;
+  cout << "Estimated time [s]                      = " << n_gen_events/(genPlane.GetGenSurfaceArea()/m2)/genPlane.GetHorizontalRate()/hertz*m2 << endl;
+  // cout << "horizonthal generation surface are [m2] = " << genPlane.GetHorGenSurfaceArea()/m2 << endl;
+  // cout << "generation rate [Hz/m2]                 = " << genPlane.GetAverageGenRate()/hertz*m2 << endl;
+  // cout << "estimated time of data taking [s]       = " << genPlane.GetEstimatedTime(n_gen_events)/s << endl;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   n_gen_events  = 0;
   n_good_events = 0;
+  auto beginTime = std::chrono::high_resolution_clock::now();
   while (n_good_events < number_of_events) {
     genHSphere.Generate();
     n_gen_events++;
@@ -129,36 +168,64 @@ void SuiteNo1(int number_of_events) {
       muon_ptot*cos(muon_theta)
     };
 
-    TVector3 layer_1_v, layer_2_v, layer_3_v;
-
-    if (!IsDetCrossed(P1, P2, P3, muon_origin, muon_p, layer_1_v)) continue;
+    if (!detector.IsCrossed(muon_origin, muon_p)) continue;
     n_good_events++;
   }
+  auto endTime = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime);
+
+  printf("\n\nTime measured: %.3f seconds.\n", elapsed.count() * 1e-9);
   cout << "\n--- Generation from half-sphere ---" << endl;
-  cout << "number of generated muons            = " << n_gen_events << endl;
-  cout << "number of muons through the detector = " << n_good_events << endl;
-  cout << "generation surface are [m2]          = " << genHSphere.GetGenSurfaceArea()/m2 << endl;
-  cout << "(average) generation rate [Hz/m2]    = " << genHSphere.GetAverageGenRate()/hertz*m2 << endl;
-  cout << "estimated time of data taking [s]    = " << genHSphere.GetEstimatedTime(n_gen_events)/s << endl;
+  cout << "number of generated muons               = " << n_gen_events << endl;
+  cout << "number of muons through the detector    = " << n_good_events << endl;
+  cout << "# gen muons/generation surface [m2]     = " << n_gen_events/(genHSphere.GetGenSurfaceArea()/m2) << endl;
+  cout << "horizonthal to half-spherical rate      = " << (n_good_events/detector.GetArea())/(n_gen_events/genHSphere.GetGenSurfaceArea()) << endl;
+  cout << "Estimated time [s]                      = " << n_gen_events/(genHSphere.GetGenSurfaceArea()/m2)/genPlane.GetHorizontalRate()/hertz*m2 << endl;
+  // cout << "generation rate [Hz/m2]                 = " << genHSphere.GetAverageGenRate()/hertz*m2 << endl;
+  // cout << "estimated time of data taking [s]       = " << genHSphere.GetEstimatedTime(n_gen_events)/s << endl;
 
   cout << endl;
   gApplication->Terminate();
 };
 
 void SuiteNo2(int number_of_events) {
+  // ----------------------------------------
+  //               Suite No. 2
+  // ----------------------------------------
+
   EcoMug genPlane;
   genPlane.SetUseSky();
   genPlane.SetSkySize({{200.*cm, 200.*cm}});
   genPlane.SetSkyCenterPosition({0., 0., 1.*mm});
-  genPlane.SetMaximumMomentum(1000*GeV);
 
-  double rate, error;
-  genPlane.MCJprimeSkyIntegration(rate, error, number_of_events);
-  cout << "rate = " << rate << " +- " << error << endl;
+  EcoMug genCylinder;
+  genCylinder.SetUseCylinder();
+  genCylinder.SetCylinderRadius(100.*cm);
+  genCylinder.SetCylinderHeight(10.*m);
+  genPlane.SetCylinderCenterPosition({0., 0., 5.*m});
 
-  genPlane.MCJprimeSkyIntegrationStrat(rate, error, number_of_events, 10);
-  cout << "rate = " << rate << " +- " << error << endl;
+  EcoMug genHSphere;
+  genHSphere.SetUseHSphere();
+  genHSphere.SetHSphereRadius(300*cm);
+  genHSphere.SetHSphereCenterPosition({0., 0., 0.});
 
+  double rateSky, rateCyl, rateHS, errorSky, errorCyl, errorHS;
+  genPlane.GetAverageGenRate(rateSky, errorSky, 1e7);
+  genCylinder.GetAverageGenRate(rateCyl, errorCyl, 1e7);
+  genHSphere.GetAverageGenRate(rateHS, errorHS, 1e7);
+
+  cout << "rate sky           = " << rateSky << " +- " << errorSky << endl;
+  cout << "rate cylinder      = " << rateCyl << " +- " << errorCyl << endl;
+  cout << "rate half-sphere   = " << rateHS << " +- " << errorHS << endl;
+  cout << "ratio (sky-to-cyl) = " << rateSky/rateCyl << " +- " << ErrorsUtility::ErrorRatio(rateSky, rateCyl, errorSky, errorCyl) << endl;
+  cout << "ratio (sky-to-hs)  = " << rateSky/rateHS << " +- " << ErrorsUtility::ErrorRatio(rateSky, rateHS, errorSky, errorHS) << endl;
+
+  gApplication->Terminate();
+};
+
+/// Check the integration for the half-sphere
+void SuiteNo3(int number_of_events) {
+  
   gApplication->Terminate();
 };
 
@@ -168,6 +235,8 @@ void TestSuite(int suite_no, int number_of_events) {
     return SuiteNo1(number_of_events);
   } else if (suite_no == 2) {
     return SuiteNo2(number_of_events);
+  } else if (suite_no == 3) {
+    return SuiteNo3(number_of_events);
   } else {
     cout << "Unknown suite number! Valid values: 1, 2" << endl;
     gApplication->Terminate();
