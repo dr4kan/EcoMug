@@ -28,6 +28,10 @@
 #include <random>
 #include <functional>
 #include <iostream>
+#include <initializer_list>
+#include <sstream>  
+
+#define ECOMUG_VERSION "2.0"
 
 #ifndef M_PI
 # define M_PI_NOT_DEFINED
@@ -73,6 +77,73 @@ namespace EMUnits {
   static const double TeV = 1.e+6*MeV;
   static const double  eV = 1.e-6*MeV;
 };
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+
+//! Class for the logging system
+class EMLog {
+public:
+  enum TLogLevel {ERROR, WARNING, INFO, DEBUG};
+
+  enum TMsgType {EcoMug, EMRandom, EMMultiGen, EMMaximization, UNKNOWN};
+
+  EMLog() {};
+  virtual ~EMLog() {
+    os << std::endl;
+    fprintf(stderr, "%s", os.str().c_str());
+    fflush(stderr);
+  };
+
+  std::ostringstream& Get(TLogLevel level = INFO);
+  void Get(TLogLevel level, const std::string& msg, TMsgType type = EcoMug) {
+    std::cout << "[EcoMug v" << ECOMUG_VERSION << "] [";
+    std::cout << ToString(level);
+    if (type != UNKNOWN) std::cout << " in " << ToString(type);
+    std::cout << "]: ";
+    std::cout << std::string(level > DEBUG ? level - DEBUG : 0, '\t');
+    std::cout << msg << "\n";
+  };
+
+public:
+  static std::string ToString(TLogLevel level) {
+    static const char* const buffer[] = {"ERROR", "WARNING", "INFO", "DEBUG"};
+    return buffer[level];
+  };
+
+  static std::string ToString(TMsgType type) {
+    static const char* const buffer[] = {"EcoMug", "EMRandom", "EMMultiGen", "EMMaximization", "UNKNOWN"};
+    return buffer[type];
+  };
+
+  static TLogLevel FromString(const std::string& level) {
+    if (level == "DEBUG")
+    return DEBUG;
+    if (level == "INFO")
+    return INFO;
+    if (level == "WARNING")
+    return WARNING;
+    if (level == "ERROR")
+    return ERROR;
+    EMLog().Get(WARNING) << "Unknown logging level '" << level << "'. Using INFO level as default.";
+    return INFO;
+  };
+
+  static EMLog::TLogLevel ReportingLevel;
+private:
+  EMLog(const EMLog&);
+  EMLog& operator =(const EMLog&);
+  std::ostringstream os;
+};
+
+#define EMLogger(level, msg, type) \
+if (level > EMLog::ReportingLevel) ; \
+else EMLog().Get(level, msg, type)
+
+EMLog::TLogLevel EMLog::ReportingLevel = WARNING;
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
 
 //! Fast generation of random numbers
 //! This class is based on the xoroshiro128+ generator.
@@ -359,6 +430,53 @@ public:
     mMaxCustomJ = {-1., -1., -1.};
   };
 
+    // Copy constructor
+    EcoMug(const EcoMug& t) {
+    mGenMethod = t.mGenMethod;
+    mGenerationPosition = t.mGenerationPosition;
+    mGenerationTheta = t.mGenerationTheta;
+    mGenerationPhi = t.mGenerationPhi;
+    mGenerationMomentum = t.mGenerationMomentum;
+    mMinimumMomentum = t.mMinimumMomentum;
+    mMaximumMomentum = t.mMaximumMomentum;
+    mMinimumTheta = t.mMinimumTheta;
+    mMaximumTheta = t.mMaximumTheta;
+    mMinimumPhi = t.mMinimumPhi;
+    mMaximumPhi = t.mMaximumPhi;
+    mCharge = t.mCharge;
+    mHorizontalRate = t.mHorizontalRate;
+    mCylinderMinPositionPhi = t.mCylinderMinPositionPhi;
+    mCylinderMaxPositionPhi = t.mCylinderMaxPositionPhi;
+    mHSphereMinPositionPhi = t.mHSphereMinPositionPhi;
+    mHSphereMaxPositionPhi = t.mHSphereMaxPositionPhi;
+    mHSphereMinPositionTheta = t.mHSphereMinPositionTheta;
+    mHSphereMaxPositionTheta = t.mHSphereMaxPositionTheta;
+    mHSphereCosMinPositionTheta = t.mHSphereCosMinPositionTheta;
+    mHSphereCosMaxPositionTheta = t.mHSphereCosMaxPositionTheta;
+    mJPrime = t.mJPrime;
+    mN = t.mN;
+    mRandAccRej = t.mRandAccRej;
+    mPhi0 = t.mPhi0;
+    mTheta0 = t.mTheta0;
+    mAccepted = t.mAccepted;
+    mSkySize = t.mSkySize;
+    mSkyCenterPosition = t.mSkyCenterPosition;
+    mCylinderHeight = t.mCylinderHeight;
+    mCylinderRadius = t.mCylinderRadius;
+    mCylinderCenterPosition = t.mCylinderCenterPosition;
+    mHSphereRadius = t.mHSphereRadius;
+    mMaxFuncSkyCylinder = t.mMaxFuncSkyCylinder;
+    mHSphereCenterPosition = t.mHSphereCenterPosition;
+    mCustomJ = t.mCustomJ;
+    mRandom = t.mRandom;
+    mEngineC = t.mEngineC;
+    mDiscDistC = t.mDiscDistC;
+    mMaxJ = t.mMaxJ;
+    mMaxCustomJ = t.mMaxCustomJ;
+    mJ = t.mJ;
+  };
+
+
   ///////////////////////////////////////////////////////////////
   // Methods to access the parameters of the generated muon
   ///////////////////////////////////////////////////////////////
@@ -510,21 +628,25 @@ public:
   /// The optional parameter npoints defines the number
   /// of points to be used in the MC integration of the J'
   void GetAverageGenRateAndError(double &rate, double &error, int npoints = 1e7) {
-    // Only works for the default flux definition
-    if (mCustomJ) {
-      rate = 0.;
-      error = 0;
-      return;
-    }
     // 129.0827 is the integral of the J'prime for the sky in
-    // the full range of theta, phi and up to 3 TeV in energy
+    // the full range of theta, phi and up to 3 TeV in energy.
+    // For custom J it is the user who should account for the correction.
     double k = mHorizontalRate/129.0827; 
     if (mGenMethod == Sky) {
-      MCJprimeSkyIntegration(rate, error, 1e7);
+      if (mCustomJ) {
+        MCJprimeCustomSkyIntegration(rate, error, 1e7);
+        return;
+      } else MCJprimeSkyIntegration(rate, error, 1e7);
     } else if (mGenMethod == Cylinder) {
-      MCJprimeCylinderIntegration(rate, error, 1e7);
+      if (mCustomJ) {
+        MCJprimeCustomCylinderIntegration(rate, error, 1e7);
+        return;
+      } else MCJprimeCylinderIntegration(rate, error, 1e7);
     } else {
-      MCJprimeHSphereIntegration(rate, error, 1e7);
+      if (mCustomJ) {
+        MCJprimeCustomHSphereIntegration(rate, error, 1e7);
+        return;
+      } else MCJprimeHSphereIntegration(rate, error, 1e7);
     }
     rate *= k;
     error *= k;
@@ -694,6 +816,59 @@ private:
     mMaxJ[mGenMethod] = maximizer.Maximize();
   };
 
+  void MCJprimeCustomSkyIntegration(double &rate, double &error, int npoints) { 
+    double I = 0., I2 = 0., value = 0.;
+    for (auto i = 0; i < npoints; ++i) {
+      mGenerationTheta = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+      mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+      value = mJ(mGenerationMomentum, mGenerationTheta)*cos(mGenerationTheta)*sin(mGenerationTheta);
+      I  += value;
+      I2 += pow(value, 2);
+    }
+    double V = (mMaximumMomentum-mMinimumMomentum)*(mMaximumTheta-mMinimumTheta)*(mMaximumPhi-mMinimumPhi);
+    double expected = I/npoints;
+    double expectedSquare = I2/npoints;
+    rate = V*I/npoints;
+    error = V*pow((expectedSquare-pow(expected,2))/(npoints-1), 0.5);
+  };
+
+  void MCJprimeCustomCylinderIntegration(double &rate, double &error, int npoints) { 
+    double I = 0., I2 = 0., value = 0.;
+    for (auto i = 0; i < npoints; ++i) {
+      mGenerationTheta = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+      mGenerationPhi = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
+      mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+      value = mJ(mGenerationMomentum, mGenerationTheta)*pow(sin(mGenerationTheta), 2)*cos(mGenerationPhi);
+      if (value < 0) value = 0;
+      I  += value;
+      I2 += pow(value, 2);
+    }
+    double V = (mMaximumMomentum-mMinimumMomentum)*(mMaximumTheta-mMinimumTheta)*(mMaximumPhi-mMinimumPhi);
+    double expected = I/npoints;
+    double expectedSquare = I2/npoints;
+    rate = V*I/npoints;
+    error = V*pow((expectedSquare-pow(expected,2))/(npoints-1), 0.5);
+  };
+
+    void MCJprimeCustomHSphereIntegration(double &rate, double &error, int npoints) { 
+    double I = 0., I2 = 0., value = 0.;
+    for (auto i = 0; i < npoints; ++i) {
+      mTheta0 = mRandom.GenerateRandomDouble(mHSphereMinPositionTheta, mHSphereMaxPositionTheta);
+      mGenerationTheta = mRandom.GenerateRandomDouble(mMinimumTheta, mMaximumTheta);
+      mGenerationPhi = mRandom.GenerateRandomDouble(mMinimumPhi, mMaximumPhi);
+      mGenerationMomentum = mRandom.GenerateRandomDouble(mMinimumMomentum, mMaximumMomentum);
+      value = mJ(mGenerationMomentum, mGenerationTheta)*(sin(mTheta0)*sin(mGenerationTheta)*sin(mGenerationTheta)*cos(mGenerationPhi)+cos(mTheta0)*cos(mGenerationTheta)*sin(mGenerationTheta))*sin(mTheta0);
+      if (value < 0) value = 0;
+      I  += value;
+      I2 += pow(value, 2);
+    }
+    double V = (mMaximumMomentum-mMinimumMomentum)*(mMaximumTheta-mMinimumTheta)*(mMaximumPhi-mMinimumPhi)*(mHSphereMaxPositionTheta-mHSphereMinPositionTheta);
+    double expected = I/npoints;
+    double expectedSquare = I2/npoints;
+    rate = V*I/npoints;
+    error = V*pow((expectedSquare-pow(expected,2))/(npoints-1), 0.5);
+  };
+
   void MCJprimeSkyIntegration(double &rate, double &error, int npoints) { 
     double I = 0., I2 = 0., value = 0.;
     for (auto i = 0; i < npoints; ++i) {
@@ -846,6 +1021,8 @@ public:
   void GenerateFromCustomJ() {
     mAccepted = false;
 
+    std::cout << mMaxCustomJ[mGenMethod] << std::endl;
+
     if (mMaxCustomJ[mGenMethod] < 0) ComputeMaximumCustomJ();
 
     // Sky or cylinder generation
@@ -925,9 +1102,111 @@ public:
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 
+
+//! Class to handle the generation from multiple distributions,
+//! for example to take into account backgound sources.
+class EMMultiGen {
+public:
+EMMultiGen(const std::initializer_list<EcoMug>& instances) : 
+  mIndex(-1), mInstances{instances}, mLimits(mInstances.size()+1), mWeights(mInstances.size(), 1.), 
+  mPID(mInstances.size()), mRd(std::random_device{}()) {
+  for (auto i = 0; i <= mInstances.size(); ++i) mLimits[i] = i;
+  mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
+};
+
+/// Set the weights for all EcoMug instance. The number of elements
+/// must be equal to the instances defined
+void SetWeights(const std::initializer_list<double>& weights) {
+  if (mInstances.size() != weights.size()) {
+    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mInstances.size()) + " weights, but " + std::to_string(weights.size()) + " were provided. Setting them to 1.", EMLog::EMMultiGen);
+    std::fill(mWeights.begin(), mWeights.end(), 1);
+  } else {
+    mWeights = weights; 
+  }
+  mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
+};
+
+/// Set the PID for all instances. Use 0 for the generation of both
+/// positive and negative muons.
+void SetPID(const std::initializer_list<int>& values) {
+  if (mInstances.size() != values.size()) {
+    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mInstances.size()) + " PID, but " + std::to_string(values.size()) + " were provided. Setting them to 0.", EMLog::EMMultiGen);
+    std::fill(mPID.begin(), mPID.end(), 0);
+    return;
+  }
+  mPID = values;
+  int n_zero = 0;
+  for (auto i = 0; i < mPID.size(); ++i) if (mPID[i] == 0) n_zero++;
+  if (n_zero != 1) {
+    EMLogger(EMLog::WARNING, "Expected exactly 1 instance with PID = 0, but " + std::to_string(n_zero) + " were provided.", EMLog::EMMultiGen);
+  }
+};
+
+/// Set the PID for a given instance. Use 0 for the generation of both
+/// positive and negative muons.
+void SetPID(std::size_t index, int value) {
+  mPID[index] = value;
+};
+
+/// Get the generation position
+const std::array<double, 3>& GetGenerationPosition() const {
+  return mInstances[mIndex].GetGenerationPosition();
+};
+
+/// Get the generation momentum
+double GetGenerationMomentum() const {
+  return mInstances[mIndex].GetGenerationMomentum();
+};
+
+/// Get the generation momentum
+void GetGenerationMomentum(std::array<double, 3>& momentum) const {
+  mInstances[mIndex].GetGenerationMomentum(momentum);
+};
+
+/// Get the generation theta
+double GetGenerationTheta() const {
+  return mInstances[mIndex].GetGenerationTheta();
+};
+
+/// Get the generation phi
+double GetGenerationPhi() const {
+  return mInstances[mIndex].GetGenerationPhi();
+};
+
+/// Get charge
+int GetCharge() const {
+  return mInstances[mIndex].GetCharge();
+};
+
+/// Get PID
+int GetPID() const {
+  return mPID[mIndex];
+};
+
+void Generate() {
+  mIndex = (int) mDd(mRd);
+  mInstances[mIndex].Generate();
+};
+
+private:
+int mIndex;
+std::vector<EcoMug> mInstances;
+std::vector<double> mLimits;
+std::vector<double> mWeights;
+std::vector<int> mPID;
+std::default_random_engine mRd;
+std::piecewise_constant_distribution<> mDd;
+};
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+#ifdef ECOMUG_VERSION 
+#undef ECOMUG_VERSION
+#endif
+
 #ifdef M_PI_NOT_DEFINED
-# undef M_PI
-# undef M_PI_NOT_DEFINED
+#undef M_PI
+#undef M_PI_NOT_DEFINED
 #endif
 
 #endif
