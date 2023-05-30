@@ -1162,16 +1162,11 @@ double GetGenerationPhi() const {
   return mBckInstances[mIndex].GetGenerationPhi();
 };
 
-/// Get charge
-int GetCharge() const {
-  return mBckInstances[mIndex].GetCharge();
-};
-
 /// Get PID
 int GetPID() const {
   // muon case
   if (mPID[mIndex] == 0) {
-    if (mBckInstances[mIndex].GetCharge() < 0) return 13;
+    if (mSigInstance.GetCharge() < 0) return 13;
     else return -13;
   }
   return mPID[mIndex];
