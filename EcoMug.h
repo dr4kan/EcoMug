@@ -417,7 +417,7 @@ public:
   mGenerationPosition({{0., 0., 0.}}), mGenerationTheta(0.), mGenerationPhi(0.),
   mGenerationMomentum(0.), mMinimumMomentum(0.01), mMaximumMomentum(1000.),
   mMinimumTheta(0.), mMaximumTheta(M_PI/2.), mMinimumPhi(0.), mMaximumPhi(2.*M_PI),
-  mCharge(1), mHorizontalRate(170*EMUnits::hertz/EMUnits::m2), mCylinderMinPositionPhi(0.), mCylinderMaxPositionPhi(2.*M_PI),
+  mCharge(1), mHorizontalRate(129*EMUnits::hertz/EMUnits::m2), mCylinderMinPositionPhi(0.), mCylinderMaxPositionPhi(2.*M_PI),
   mHSphereMinPositionPhi(0.), mHSphereMaxPositionPhi(2.*M_PI), mHSphereMinPositionTheta(0.),
   mHSphereMaxPositionTheta(M_PI/2.), mHSphereCosMinPositionTheta(1.), mHSphereCosMaxPositionTheta(0.),
   mJPrime(0.), mN(0.), mRandAccRej(0.), mPhi0(0.), mTheta0(0.), mAccepted(false),
@@ -577,7 +577,7 @@ public:
     mMaximumPhi = phi;
   };
   /// Set the rate of cosmic ray muons per square unit are through
-  /// a horizontal surface. Default value is 170 Hz/m^2.
+  /// a horizontal surface. Default value is 129 Hz/m^2.
   void SetHorizontalRate(double rate) {
     mHorizontalRate = rate;
   };
@@ -1107,90 +1107,85 @@ public:
 //! for example to take into account backgound sources.
 class EMMultiGen {
 public:
-EMMultiGen(const std::initializer_list<EcoMug>& instances) : 
-  mIndex(-1), mInstances{instances}, mLimits(mInstances.size()+1), mWeights(mInstances.size(), 1.), 
-  mPID(mInstances.size()), mRd(std::random_device{}()) {
-  for (auto i = 0; i <= mInstances.size(); ++i) mLimits[i] = i;
+EMMultiGen(const EcoMug& signal, const std::vector<EcoMug>& backgrounds) : 
+  mIndex(-1), mSigInstance(signal), mBckInstances{backgrounds}, mLimits(backgrounds.size()+2), mWeights(backgrounds.size()+1, 1.), 
+  mPID(backgrounds.size()+1), mRd(std::random_device{}()) {
+  for (auto i = 0; i < mLimits.size(); ++i) mLimits[i] = i;
   mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
 };
 
-/// Set the weights for all EcoMug instance. The number of elements
-/// must be equal to the instances defined
-void SetWeights(const std::initializer_list<double>& weights) {
-  if (mInstances.size() != weights.size()) {
-    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mInstances.size()) + " weights, but " + std::to_string(weights.size()) + " were provided. Setting them to 1.", EMLog::EMMultiGen);
+/// Set the weights for all EcoMug background instance. The number of elements
+/// must be equal to the background instances defined
+void SetBckWeights(const std::vector<double>& weights) {
+  if (mBckInstances.size() != weights.size()) {
+    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mBckInstances.size()) + " weights, but " + std::to_string(weights.size()) + " were provided. Setting them to 1.", EMLog::EMMultiGen);
     std::fill(mWeights.begin(), mWeights.end(), 1);
   } else {
-    mWeights = weights; 
+    for (auto i = 0; i < weights.size(); ++i) mWeights[i+1] = weights[i];
   }
   mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
 };
 
-/// Set the PID for all instances. Use 0 for the generation of both
-/// positive and negative muons.
-void SetPID(const std::initializer_list<int>& values) {
-  if (mInstances.size() != values.size()) {
-    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mInstances.size()) + " PID, but " + std::to_string(values.size()) + " were provided. Setting them to 0.", EMLog::EMMultiGen);
+/// Set the PID for all background instances. 
+void SetBckPID(const std::vector<int>& values) {
+  if (mBckInstances.size() != values.size()) {
+    EMLogger(EMLog::ERROR, "Expected " + std::to_string(mBckInstances.size()) + " PID, but " + std::to_string(values.size()) + " were provided. Setting them to 0.", EMLog::EMMultiGen);
     std::fill(mPID.begin(), mPID.end(), 0);
     return;
   }
-  mPID = values;
-  int n_zero = 0;
-  for (auto i = 0; i < mPID.size(); ++i) if (mPID[i] == 0) n_zero++;
-  if (n_zero != 1) {
-    EMLogger(EMLog::WARNING, "Expected exactly 1 instance with PID = 0, but " + std::to_string(n_zero) + " were provided.", EMLog::EMMultiGen);
-  }
-};
-
-/// Set the PID for a given instance. Use 0 for the generation of both
-/// positive and negative muons.
-void SetPID(std::size_t index, int value) {
-  mPID[index] = value;
+  for (auto i = 0; i < values.size(); ++i) mPID[i+1] = values[i];
 };
 
 /// Get the generation position
 const std::array<double, 3>& GetGenerationPosition() const {
-  return mInstances[mIndex].GetGenerationPosition();
+  return mBckInstances[mIndex].GetGenerationPosition();
 };
 
 /// Get the generation momentum
 double GetGenerationMomentum() const {
-  return mInstances[mIndex].GetGenerationMomentum();
+  return mBckInstances[mIndex].GetGenerationMomentum();
 };
 
 /// Get the generation momentum
 void GetGenerationMomentum(std::array<double, 3>& momentum) const {
-  mInstances[mIndex].GetGenerationMomentum(momentum);
+  mBckInstances[mIndex].GetGenerationMomentum(momentum);
 };
 
 /// Get the generation theta
 double GetGenerationTheta() const {
-  return mInstances[mIndex].GetGenerationTheta();
+  return mBckInstances[mIndex].GetGenerationTheta();
 };
 
 /// Get the generation phi
 double GetGenerationPhi() const {
-  return mInstances[mIndex].GetGenerationPhi();
+  return mBckInstances[mIndex].GetGenerationPhi();
 };
 
 /// Get charge
 int GetCharge() const {
-  return mInstances[mIndex].GetCharge();
+  return mBckInstances[mIndex].GetCharge();
 };
 
 /// Get PID
 int GetPID() const {
+  // muon case
+  if (mPID[mIndex] == 0) {
+    if (mBckInstances[mIndex].GetCharge() < 0) return 13;
+    else return -13;
+  }
   return mPID[mIndex];
 };
 
 void Generate() {
   mIndex = (int) mDd(mRd);
-  mInstances[mIndex].Generate();
+  if (mIndex == 0) mSigInstance.Generate(); 
+  else mBckInstances[mIndex-1].Generate();
 };
 
 private:
 int mIndex;
-std::vector<EcoMug> mInstances;
+EcoMug mSigInstance;
+std::vector<EcoMug> mBckInstances;
 std::vector<double> mLimits;
 std::vector<double> mWeights;
 std::vector<int> mPID;

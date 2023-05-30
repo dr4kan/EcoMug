@@ -234,7 +234,6 @@ void SuiteNo2(int number_of_events) {
 
 
 
-/// Suite to test the performance on custom generated functions
 void SuiteNo3(int number_of_events) {
   // ----------------------------------------
   //               Suite No. 3
@@ -246,7 +245,7 @@ void SuiteNo3(int number_of_events) {
   genSky.SetMinimumMomentum(100.*EMUnits::GeV);
 
   EcoMug genSky200(genSky);
-  genSky200.SetHorizontalRate(200.*EMUnits::hertz/EMUnits::m2);
+  genSky200.SetHorizontalRate(150.*EMUnits::hertz/EMUnits::m2);
 
   EcoMug genCustomSky(genSky);
   genCustomSky.SetDifferentialFlux(&J);
@@ -262,10 +261,10 @@ void SuiteNo3(int number_of_events) {
   genCustomSky.GetAverageGenRateAndError(rateCustomSky, errorCustomSky, 1e7);
   genCustomSky200.GetAverageGenRateAndError(rateCustomSky200, errorCustomSky200, 1e7);
 
-  cout << "rate sky (170 Hz/m2)        = " << rateSky << " +- " << errorSky << endl;
-  cout << "rate sky (200 Hz/m2)        = " << rateSky200 << " +- " << errorSky200 << endl;
-  cout << "rate custom sky (170 Hz/m2) = " << rateCustomSky << " +- " << errorCustomSky << endl;
-  cout << "rate custom sky (200 Hz/m2) = " << rateCustomSky200 << " +- " << errorCustomSky200 << endl;
+  cout << "rate sky (129 Hz/m2)        = " << rateSky << " +- " << errorSky << endl;
+  cout << "rate sky (150 Hz/m2)        = " << rateSky200 << " +- " << errorSky200 << endl;
+  cout << "rate custom sky (129 Hz/m2) = " << rateCustomSky << " +- " << errorCustomSky << endl;
+  cout << "rate custom sky (150 Hz/m2) = " << rateCustomSky200 << " +- " << errorCustomSky200 << endl;
 
   gApplication->Terminate();
 };
@@ -285,13 +284,23 @@ void SuiteNo4(int number_of_events) {
   EcoMug electronGen(muonGen);
   electronGen.SetDifferentialFlux(&J);
 
-  EMMultiGen genSuite({muonGen, electronGen});
-  genSuite.SetWeights({1., 0.1});
-  genSuite.SetPID({0, 11});
+  EcoMug positronsGen(muonGen);
+  electronGen.SetDifferentialFlux(&J);
 
-  for (auto i = 0; i < 100; ++i) {
+  EMMultiGen genSuite(muonGen, {electronGen, positronsGen});
+  genSuite.SetBckWeights({0.2, 0.1});
+  genSuite.SetBckPID({11, -11});
+
+  map<int, int> counts;
+  for (auto i = 0; i < number_of_events; ++i) {
     genSuite.Generate();
-    cout << genSuite.GetPID() << endl;
+    counts[genSuite.GetPID()]++;
+  }
+  cout << std::right << std::setw(5) << "PID" << std::right << std::setw(8) << " counts" 
+       << "     ratio" << endl; 
+  for (auto& [key, value]: counts) {
+    cout << std::right << std::setw(5) << key << std::right << std::setw(8) << value 
+         << "   (" << std::setprecision(3) << (double) value/(counts[13]+counts[-13]) << ")" << endl;
   }
 
   gApplication->Terminate();
@@ -310,7 +319,7 @@ void TestSuite(int suite_no, int number_of_events) {
   } else if (suite_no == 4) {
     return SuiteNo4(number_of_events);
   } else {
-    cout << "Unknown suite number! Valid values: 1, 2" << endl;
+    cout << "Unknown suite number! Valid values are numbers from 1 to 4" << endl;
     gApplication->Terminate();
   }
 };
