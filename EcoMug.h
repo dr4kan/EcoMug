@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // EcoMug: Efficient COsmic MUon Generator                                         //
 // Copyright (C) 2023 Davide Pagano <davide.pagano@unibs.it>                       //
+//                                                                                 //
 // EcoMug is based on the following work:                                          //
 // D. Pagano, G. Bonomi, A. Donzella, A. Zenoni, G. Zumerle, N. Zurlo,             //
 // "EcoMug: an Efficient COsmic MUon Generator for cosmic-ray muons applications", //
@@ -634,19 +635,19 @@ public:
     double k = mHorizontalRate/129.0827; 
     if (mGenMethod == Sky) {
       if (mCustomJ) {
-        MCJprimeCustomSkyIntegration(rate, error, 1e7);
+        MCJprimeCustomSkyIntegration(rate, error, npoints);
         return;
-      } else MCJprimeSkyIntegration(rate, error, 1e7);
+      } else MCJprimeSkyIntegration(rate, error, npoints);
     } else if (mGenMethod == Cylinder) {
       if (mCustomJ) {
-        MCJprimeCustomCylinderIntegration(rate, error, 1e7);
+        MCJprimeCustomCylinderIntegration(rate, error, npoints);
         return;
-      } else MCJprimeCylinderIntegration(rate, error, 1e7);
+      } else MCJprimeCylinderIntegration(rate, error, npoints);
     } else {
       if (mCustomJ) {
-        MCJprimeCustomHSphereIntegration(rate, error, 1e7);
+        MCJprimeCustomHSphereIntegration(rate, error, npoints);
         return;
-      } else MCJprimeHSphereIntegration(rate, error, 1e7);
+      } else MCJprimeHSphereIntegration(rate, error, npoints);
     }
     rate *= k;
     error *= k;
@@ -1110,7 +1111,7 @@ public:
 EMMultiGen(const EcoMug& signal, const std::vector<EcoMug>& backgrounds) : 
   mIndex(-1), mSigInstance(signal), mBckInstances{backgrounds}, mLimits(backgrounds.size()+2), mWeights(backgrounds.size()+1, 1.), 
   mPID(backgrounds.size()+1), mRd(std::random_device{}()) {
-  for (auto i = 0; i < mLimits.size(); ++i) mLimits[i] = i;
+  for (std::size_t i = 0; i < mLimits.size(); ++i) mLimits[i] = i;
   mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
 };
 
@@ -1121,7 +1122,7 @@ void SetBckWeights(const std::vector<double>& weights) {
     EMLogger(EMLog::ERROR, "Expected " + std::to_string(mBckInstances.size()) + " weights, but " + std::to_string(weights.size()) + " were provided. Setting them to 1.", EMLog::EMMultiGen);
     std::fill(mWeights.begin(), mWeights.end(), 1);
   } else {
-    for (auto i = 0; i < weights.size(); ++i) mWeights[i+1] = weights[i];
+    for (std::size_t i = 0; i < weights.size(); ++i) mWeights[i+1] = weights[i];
   }
   mDd = std::piecewise_constant_distribution<>(mLimits.begin(), mLimits.end(), mWeights.begin());
 };
@@ -1133,7 +1134,7 @@ void SetBckPID(const std::vector<int>& values) {
     std::fill(mPID.begin(), mPID.end(), 0);
     return;
   }
-  for (auto i = 0; i < values.size(); ++i) mPID[i+1] = values[i];
+  for (std::size_t i = 0; i < values.size(); ++i) mPID[i+1] = values[i];
 };
 
 /// Get the generation position
