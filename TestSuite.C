@@ -309,7 +309,6 @@ void SuiteNo4(int number_of_events) {
 
 
 void TestSuite(int suite_no, int number_of_events) {
-
   if (suite_no == 1) {
     return SuiteNo1(number_of_events);
   } else if (suite_no == 2) {
