@@ -6,13 +6,15 @@ If you use, or want to refer to, EcoMug please cite the following paper:
 
 > Pagano, D., Bonomi, G., Donzella, A., Zenoni, A., Zumerle, G., & Zurlo, N. (2021). EcoMug: An Efficient COsmic MUon Generator for cosmic-ray muon applications. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment, 1014, 165732.
 
-Latest release: [EcoMug v1.3](https://github.com/dr4kan/EcoMug/releases/tag/v1.3)
+Latest release: [EcoMug v2.0.0](https://github.com/dr4kan/EcoMug/releases/tag/v2.0.0)
 
 
 
 # Basic Usage
 
 The use of the library requires the initialization of the `EcoMug` class, the choice of the generation method, and the definition of the size and position of the generation surface. Once the setup of the instance of the `EcoMug` class is done, the generation of a cosmic-ray muon can be invoked with the method `Generate()`, which will compute its position, direction, momentum, and charge. All these quantities can be accessed with the methods `GetGenerationPosition()`, `GetGenerationTheta()`, `GetGenerationPhi()`, `GetGenerationMomentum()`, and `GetCharge()`, as shown in the examples below. The charge for generated muons takes into account the excess of positive muons over negative ones, assuming a constant charge ratio (see the above mentioned paper for more details). Angles are in radians, momentum is in GeV/c, whereas the unit of measure of the position is arbitrary and depends on the choice done in the simulation code where EcoMug is used.
+
+
 
 ### Plane-based generation
 
@@ -37,6 +39,8 @@ for (auto event = 0; event < number_of_events; ++event) {
 }
 ```
 
+
+
 ### Cylinder-based generation
 
 ```
@@ -60,6 +64,8 @@ for (auto event = 0; event < number_of_events; ++event) {
   ...
 }
 ```
+
+
 
 ### Hsphere-based generation
 
@@ -151,7 +157,47 @@ for (auto event = 0; event < nevents; ++event) {
 ```
 
 
+# Rate and time estimation
 
-# Adding a Background
+EcoMug allows to estimate the rate and time to collect a given number of muons, also in those cases where the user has constrained the generation (for example by cutting on the momentum or angles). The user can specify the average expected rate (via `SetHorizontalRate`) to take into account, for example, the effect of altitude. Default value is 129 $Hz/m^2$.
 
-In those cases where the user is also interested in generating background events, he/she can initialize a new instance of the `EcoMug` class with a custom definition of the *J* to describe the background.
+While the rate and time estimation also works with custom definitions of the flux, it is up to the user to define a properly normalized J: `SetHorizontalRate` does not work in this case.
+
+```
+EcoMug genPlane;
+genPlane.SetUseSky();
+genPlane.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+genPlane.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+
+cout << "Estimated time [s] = " << genPlane.GetEstimatedTime(10000) << endl;
+```
+
+
+
+# Deal with background
+
+The class `EMMultiGen` allows to handle the generation of the background as well as the signal. It requires a `EcoMug` instance for the signal and one or more instances for the background. Additionally the user has to specify the differential flux (even unnormalized), the PID ([Monte Carlo particle numbering scheme](https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf)) and the relative weight (w.r.t. signal) for all backgrounds.
+
+```
+EcoMug muonGen;
+muonGen.SetUseSky();
+muonGen.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+muonGen.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+
+EcoMug electronGen(muonGen);
+electronGen.SetDifferentialFlux(&J);
+
+EcoMug positronsGen(muonGen);
+electronGen.SetDifferentialFlux(&J);
+
+EMMultiGen genSuite(muonGen, {electronGen, positronsGen});
+genSuite.SetBckWeights({0.2, 0.1});
+genSuite.SetBckPID({11, -11});
+
+map<int, int> counts;
+for (auto i = 0; i < number_of_events; ++i) {
+  genSuite.Generate();
+  counts[genSuite.GetPID()]++;
+}
+```
+

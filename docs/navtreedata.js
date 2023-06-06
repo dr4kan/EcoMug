@@ -25,11 +25,7 @@
 var NAVTREE =
 [
   [ "EcoMug", "index.html", [
-    [ "EcoMug: Efficient COsmic MUon Generator", "index.html", [
-      [ "Basic Usage", "index.html#autotoc_md1", null ],
-      [ "More Advanced Usage", "index.html#autotoc_md5", null ],
-      [ "Adding a Background", "index.html#autotoc_md6", null ]
-    ] ],
+    [ "EcoMug: Efficient COsmic MUon Generator", "index.html", "index" ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
