@@ -32,7 +32,7 @@
 #include <initializer_list>
 #include <sstream>  
 
-#define ECOMUG_VERSION "2.0"
+#define ECOMUG_VERSION "2.1"
 
 #ifndef M_PI
 # define M_PI_NOT_DEFINED
@@ -141,7 +141,7 @@ private:
 if (level > EMLog::ReportingLevel) ; \
 else EMLog().Get(level, msg, type)
 
-EMLog::TLogLevel EMLog::ReportingLevel = WARNING;
+//EMLog::TLogLevel EMLog::ReportingLevel = WARNING;
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 
