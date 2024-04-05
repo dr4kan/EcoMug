@@ -201,3 +201,52 @@ for (auto i = 0; i < number_of_events; ++i) {
 }
 ```
 
+In case you want to compile the previous code, please take a look at the following example, which should be compiled with the -std=c++11 flag.
+
+```
+#include <iostream>
+#include <map>
+#include <iomanip>
+#include "EcoMug.h"
+
+double J(double p, double theta) {
+  double A = 1400*pow(p, -2.7);
+  double B = 1. / (1. + 1.1*p*cos(theta)/115.);
+  double C = 0.054 / (1. + 1.1*p*cos(theta)/850.);
+  return A*(B+C);
+};
+
+EMLog::TLogLevel EMLog::ReportingLevel = WARNING;
+
+int main() {
+
+    EcoMug muonGen;
+    muonGen.SetUseSky();
+    muonGen.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+    muonGen.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+
+    EcoMug electronGen(muonGen);
+    electronGen.SetDifferentialFlux(&J);
+
+    EcoMug positronsGen(muonGen);
+    electronGen.SetDifferentialFlux(&J);
+
+    EMMultiGen genSuite(muonGen, {electronGen, positronsGen});
+    genSuite.SetBckWeights({0.2, 0.1});
+    genSuite.SetBckPID({11, -11});
+
+    std::map<int, int> counts;
+    for (auto i = 0; i < 10000; ++i) {
+        genSuite.Generate();
+        counts[genSuite.GetPID()]++;
+    }
+    std::cout << std::right << std::setw(5) << "PID" << std::right << std::setw(8) << " counts" 
+        << "     ratio" << std::endl; 
+
+    for (auto const& x : counts) {
+        std::cout << std::right << std::setw(5) << x.first << std::right << std::setw(8) << x.second 
+            << "   (" << std::setprecision(3) << (double) x.second/(counts[13]+counts[-13]) << ")" << std::endl;
+    }
+}
+```
+
