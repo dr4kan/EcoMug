@@ -308,6 +308,54 @@ void SuiteNo4(int number_of_events) {
 
 
 
+void SuiteNo5(int number_of_events) {
+  // ----------------------------------------
+  //               Suite No. 5
+  // ----------------------------------------
+
+  EcoMug genCustomJ;
+  genCustomJ.SetUseSky();
+  genCustomJ.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+  genCustomJ.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+  genCustomJ.SetMinimumMomentum(150.*EMUnits::MeV);
+  genCustomJ.SetMaximumMomentum(100.*EMUnits::GeV);
+  genCustomJ.SetDifferentialFlux(&J);
+
+  EcoMug genStandard;
+  genStandard.SetUseSky();
+  genStandard.SetSkySize({{200.*EMUnits::cm, 200.*EMUnits::cm}});
+  genStandard.SetSkyCenterPosition({0., 0., 1.*EMUnits::mm});
+  genStandard.SetMinimumMomentum(150.*EMUnits::MeV);
+  genStandard.SetMaximumMomentum(100.*EMUnits::GeV);
+
+  TH1D* hMomCustomJ  = new TH1D("hMomCustomJ",  "Momentum - Custom J; p [GeV/c]; entries", 100, 0., 20.);
+  TH1D* hMomStandard = new TH1D("hMomStandard", "Momentum - Standard J; p [GeV/c]; entries", 100, 0., 20.);
+  TH1D* hThetaCustomJ  = new TH1D("hThetaCustomJ",  "Theta - Custom J; #theta [rad]; entries", 90, 0., M_PI/2.);
+  TH1D* hThetaStandard = new TH1D("hThetaStandard", "Theta - Standard J; #theta [rad]; entries", 90, 0., M_PI/2.);
+
+  cout << "\n--- Suite No. 5: Custom J vs Standard J ---" << endl;
+  cout << "Generating " << number_of_events << " events with GenerateFromCustomJ()..." << endl;
+
+  for (auto event = 0; event < number_of_events; ++event) {
+    genCustomJ.GenerateFromCustomJ();
+    hMomCustomJ->Fill(genCustomJ.GetGenerationMomentum()/EMUnits::GeV);
+    hThetaCustomJ->Fill(M_PI - genCustomJ.GetGenerationTheta());
+
+    genStandard.Generate();
+    hMomStandard->Fill(genStandard.GetGenerationMomentum()/EMUnits::GeV);
+    hThetaStandard->Fill(M_PI - genStandard.GetGenerationTheta());
+  }
+
+  cout << "Custom J   - mean momentum [GeV/c] : " << hMomCustomJ->GetMean()   << " +- " << hMomCustomJ->GetMeanError()   << endl;
+  cout << "Standard J - mean momentum [GeV/c] : " << hMomStandard->GetMean()  << " +- " << hMomStandard->GetMeanError()  << endl;
+  cout << "Custom J   - mean theta [rad]      : " << hThetaCustomJ->GetMean()  << " +- " << hThetaCustomJ->GetMeanError()  << endl;
+  cout << "Standard J - mean theta [rad]      : " << hThetaStandard->GetMean() << " +- " << hThetaStandard->GetMeanError() << endl;
+
+  gApplication->Terminate();
+};
+
+
+
 void TestSuite(int suite_no, int number_of_events) {
   if (suite_no == 1) {
     return SuiteNo1(number_of_events);
@@ -317,8 +365,10 @@ void TestSuite(int suite_no, int number_of_events) {
     return SuiteNo3(number_of_events);
   } else if (suite_no == 4) {
     return SuiteNo4(number_of_events);
+  } else if (suite_no == 5) {
+    return SuiteNo5(number_of_events);
   } else {
-    cout << "Unknown suite number! Valid values are numbers from 1 to 4" << endl;
+    cout << "Unknown suite number! Valid values are numbers from 1 to 5" << endl;
     gApplication->Terminate();
   }
 };

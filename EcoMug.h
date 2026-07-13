@@ -1052,8 +1052,6 @@ public:
   void GenerateFromCustomJ() {
     mAccepted = false;
 
-    std::cout << mMaxCustomJ[mGenMethod] << std::endl;
-
     if (mMaxCustomJ[mGenMethod] < 0) ComputeMaximumCustomJ();
 
     // Sky or cylinder generation
