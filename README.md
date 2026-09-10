@@ -93,15 +93,18 @@ for (auto event = 0; event < number_of_events; ++event) {
 
 ### Target-sphere generation
 
-The three generation surfaces above cover the apparatus and then rely on the user
-to discard the muons that miss it. For a typical detector that is almost all of
-them: a 20x20 cm telescope with 50 cm between the planes keeps fewer than one
-generated muon in a thousand, and the waste grows with the square of the
-generation surface, so enlarging the sky to avoid losing inclined muons makes it
-worse.
+The three surfaces above are physical generation surfaces: muons are produced on
+them and it is left to you to discard the ones that miss the apparatus. For a real
+detector that is nearly all of them. A 20 x 20 cm telescope with 50 cm between its
+planes keeps about **one generated muon in 1100**, and you cannot simply shrink the
+generation plane to save time: a muon arriving at 75 degrees from the zenith travels
+1.9 m sideways on its way down, so a plane that is too small quietly loses the
+inclined muons and reports a rate that is low by about a percent. You end up choosing
+between a biased answer and a slow one, and the slow one gets worse as the square of
+the plane size.
 
-`SetUseTargetSphere()` instead aims the generation at a sphere enclosing the
-detector, so every muon is produced already pointing through it:
+`SetUseTargetSphere()` removes that trade-off. You declare a sphere enclosing the
+apparatus, and every muon is produced on it already pointing through it:
 
 ```
 EcoMug gen; // initialization of the class
@@ -118,27 +121,59 @@ for (auto event = 0; event < number_of_events; ++event) {
 }
 ```
 
-The muon starts on the surface of the sphere, so it is already outside the
-detector volume and can be handed straight to a transport code.
-
-This is an exact construction, not an approximation: for a given direction the
-muons crossing a sphere of radius R are exactly those crossing the disc of radius
-R perpendicular to that direction. Rates and `GetEstimatedTime()` are normalised
-to the disc area pi*R^2 and stay directly comparable with the other geometries --
-the same detector sees the same rate, it just takes far fewer generated muons to
-measure it. For the telescope above, against a plane covering the same solid
-angle:
+The cost then depends on the size of your detector, not on how large a generation
+surface you would otherwise have needed. Same telescope, same number of two-plane
+coincidences:
 
 | generation surface | generated muons | time |
 | ------------------ | --------------- | ---- |
-| sky 2 x 2 m        | 4.3 M           | 3.4 s |
+| sky 2 x 2 m        | 4.3 M           | 3.4 s (rate 0.7% low: edge losses) |
+| sky 4 x 4 m        | 17.5 M          | 13.7 s |
 | sky 8 x 8 m        | 70.5 M          | 54.5 s |
 | sky 16 x 16 m      | 278.8 M         | 216.7 s |
 | target sphere, R = 0.29 m | 0.4 M    | 0.4 s |
 
-Note that the gain depends on how well a sphere encloses the apparatus: a
-compact detector benefits most, a long thin one least.
+This is an exact construction, not an approximation: for a given direction the muons
+crossing a sphere of radius R are exactly those crossing the disc of radius R
+perpendicular to that direction, so the muon is drawn uniformly on that disc and
+traced back onto the sphere. Rates and `GetEstimatedTime()` are normalised to the
+disc area `pi*R^2` and remain directly comparable with the other geometries: for the
+telescope above the sky and the target sphere agree on the coincidence rate to 0.3
+sigma. Because the muon starts on the sphere it is already outside the setup, ready
+to be handed to a transport code such as Geant4.
 
+#### How this differs from the half-sphere
+
+`SetUseHSphere()` may look like the same idea, but it is a physical dome that muons
+cross, while the target sphere is an importance-sampling construction. Three things
+follow, and they compound. Same telescope, same coincidences:
+
+| | radius | generation area | generated muons | time |
+| --- | --- | --- | --- | --- |
+| target sphere | 0.287 m | 0.259 m2 (`pi*R^2`) | 0.77 M | 0.8 s |
+| half-sphere   | 0.520 m | 1.697 m2 (`2*pi*R^2`) | 2.19 M | 6.7 s |
+
+* A half-sphere is a **dome**, so it cannot enclose the apparatus: it has to sit on
+  top of it and be wide enough to cover it from above. Here that means R = 0.52 m
+  instead of the 0.287 m of the smallest enclosing sphere.
+* Its area is `2*pi*R^2`, whereas the target sphere's generation disc is `pi*R^2`
+  and does not depend on the direction. Together with the larger radius
+  that is a factor 6.5 in area.
+* On the dome, position and direction are drawn **independently**, so a muon can be
+  born near the rim, point inwards and leave without ever coming close to the
+  detector. On the target sphere every muon crosses the sphere by construction.
+
+Both give the same physical rate (they agree to 0.1% above), so this is purely a
+question of cost. The half-sphere remains the right choice when the positions on the
+dome are themselves what you are studying; for feeding a detector simulation, the
+target sphere is what you want.
+
+Two things to keep in mind. The gain depends on how snugly a sphere encloses the
+apparatus, so a compact detector benefits most and a long thin one least. And
+because the generation disc is perpendicular to each muon, there is no cos(theta)
+projection factor: the *generated* angular distribution is weighted by
+`J*sin(theta)` and looks flatter than a sky-generated one, even though the physical
+rate through any given detector is identical.
 
 # More Advanced Usage
 
