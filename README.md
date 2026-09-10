@@ -96,8 +96,8 @@ for (auto event = 0; event < number_of_events; ++event) {
 The surfaces above are physical: muons are produced on them and it is left to you to
 discard the ones that miss the apparatus. 
 
-`SetUseTargetSphere()` takes the technically different approach: you declare a sphere enclosing
-the apparatus, and every muon is produced on it already pointing through it:
+`SetUseTargetSphere()` takes a technically different approach: you declare a sphere enclosing
+the apparatus, and every muon is produced on it already pointing through it.
 
 ```
 EcoMug gen; // initialization of the class
