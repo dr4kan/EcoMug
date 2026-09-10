@@ -1,12 +1,12 @@
 # EcoMug: Efficient COsmic MUon Generator
 
-EcoMug is a header-only C++11 library for the generation of cosmic ray (CR) muons, based on a parametrization of experimental data. Unlike other tools, EcoMug gives the possibility of generating from different surfaces (plane, cylinder and half-sphere), while keeping the correct angular and momentum distribution of generated tracks. EcoMug also allows the generation of CR muons according to user-defined parametrizations of their differential flux.
+EcoMug is a header-only C++17 library for the generation of cosmic ray (CR) muons, based on a parametrization of experimental data. Unlike other tools, EcoMug gives the possibility of generating from different surfaces (plane, cylinder, half-sphere, and a sphere enclosing the detector), while keeping the correct angular and momentum distribution of generated tracks. EcoMug also allows the generation of CR muons according to user-defined parametrizations of their differential flux.
 
 If you use, or want to refer to, EcoMug please cite the following paper:
 
 > Pagano, D., Bonomi, G., Donzella, A., Zenoni, A., Zumerle, G., & Zurlo, N. (2021). EcoMug: An Efficient COsmic MUon Generator for cosmic-ray muon applications. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment, 1014, 165732.
 
-Latest release: [EcoMug v2.1](https://github.com/dr4kan/EcoMug/releases/tag/v2.1)
+Latest release: [EcoMug v3.0](https://github.com/dr4kan/EcoMug/releases/tag/v3.0)
 
 
 
@@ -91,10 +91,65 @@ for (auto event = 0; event < number_of_events; ++event) {
 ```
 
 
+### Target-sphere generation
+
+The three generation surfaces above cover the apparatus and then rely on the user
+to discard the muons that miss it. For a typical detector that is almost all of
+them: a 20x20 cm telescope with 50 cm between the planes keeps fewer than one
+generated muon in a thousand, and the waste grows with the square of the
+generation surface, so enlarging the sky to avoid losing inclined muons makes it
+worse.
+
+`SetUseTargetSphere()` instead aims the generation at a sphere enclosing the
+detector, so every muon is produced already pointing through it:
+
+```
+EcoMug gen; // initialization of the class
+gen.SetUseTargetSphere(); // generation aimed at the detector
+gen.SetTargetSphereRadius(0.29); // radius of a sphere enclosing the detector
+// (x,y,z) position of the center of that sphere
+gen.SetTargetSphereCenterPosition({{0., 0., 0.25}});
+
+for (auto event = 0; event < number_of_events; ++event) {
+  gen.Generate();
+  std::array<double, 3> muon_position = gen.GetGenerationPosition();
+  double muon_p = gen.GetGenerationMomentum();
+  ...
+}
+```
+
+The muon starts on the surface of the sphere, so it is already outside the
+detector volume and can be handed straight to a transport code.
+
+This is an exact construction, not an approximation: for a given direction the
+muons crossing a sphere of radius R are exactly those crossing the disc of radius
+R perpendicular to that direction. Rates and `GetEstimatedTime()` are normalised
+to the disc area pi*R^2 and stay directly comparable with the other geometries --
+the same detector sees the same rate, it just takes far fewer generated muons to
+measure it. For the telescope above, against a plane covering the same solid
+angle:
+
+| generation surface | generated muons | time |
+| ------------------ | --------------- | ---- |
+| sky 2 x 2 m        | 4.3 M           | 3.4 s |
+| sky 8 x 8 m        | 70.5 M          | 54.5 s |
+| sky 16 x 16 m      | 278.8 M         | 216.7 s |
+| target sphere, R = 0.29 m | 0.4 M    | 0.4 s |
+
+Note that the gain depends on how well a sphere encloses the apparatus: a
+compact detector benefits most, a long thin one least.
+
 
 # More Advanced Usage
 
 It is possible to set the seed in EcoMug, for reproducible generations. This can be done with the method `SetSeed`, as shown in the example below. If the seed is set to 0 (or the method is not invoked at all), a random seed is used.
+
+One seed drives everything a generator produces, the muon charge included, so two runs
+with the same seed agree event by event. This matters when EcoMug feeds a transport code:
+a muon of the opposite charge makes Geant4 consume a different number of random numbers,
+and everything after it diverges. (Before v3.0 the charge came from a separate engine
+that `SetSeed` did not reach.) `EMMultiGen` has its own `SetSeed`, which seeds the source
+selection and every contained generator, each with an independent stream.
 
 ```
 EcoMug gen;
@@ -161,7 +216,11 @@ for (auto event = 0; event < nevents; ++event) {
 
 EcoMug allows to estimate the rate and time to collect a given number of muons, also in those cases where the user has constrained the generation (for example by cutting on the momentum or angles). The user can specify the average expected rate (via `SetHorizontalRate`) to take into account, for example, the effect of altitude. Default value is 129 $Hz/m^2$.
 
-While the rate and time estimation also works with custom definitions of the flux, it is up to the user to define a properly normalized J: `SetHorizontalRate` does not work in this case.
+With a user-supplied flux the normalisation is not known to EcoMug, so rates cannot be
+put on an absolute scale: `SetHorizontalRate` has no effect, and `GetEstimatedTime`
+returns 0 and prints a warning. `GetAverageGenRate` still returns the integral of the
+flux you supplied, in whatever units that flux is expressed in, so normalise J yourself
+if you need absolute rates.
 
 ```
 EcoMug genPlane;
@@ -178,6 +237,13 @@ cout << "Estimated time [s] = " << genPlane.GetEstimatedTime(10000) << endl;
 
 The class `EMMultiGen` allows to handle the generation of the background as well as the signal. It requires a `EcoMug` instance for the signal and one or more instances for the background. Additionally the user has to specify the differential flux (even unnormalized), the PID ([Monte Carlo particle numbering scheme](https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf)) and the relative weight (w.r.t. signal) for all backgrounds.
 
+The weights are relative and the signal implicitly carries weight 1, so a component fires
+with probability `w_i/(1 + sum_j w_j)`. A PID of 0, which the signal keeps, means "muon,
+charge chosen by the generator", and `GetPID()` then returns 13 or -13. Each source keeps
+its own configuration, its differential flux included: a source set up with
+`SetDifferentialFlux` is driven with `GenerateFromCustomJ`, the others with `Generate`.
+`EMMultiGen::SetSeed` makes the whole mixture, source selection included, reproducible.
+
 ```
 EcoMug muonGen;
 muonGen.SetUseSky();
@@ -188,7 +254,7 @@ EcoMug electronGen(muonGen);
 electronGen.SetDifferentialFlux(&J);
 
 EcoMug positronsGen(muonGen);
-electronGen.SetDifferentialFlux(&J);
+positronsGen.SetDifferentialFlux(&J);
 
 EMMultiGen genSuite(muonGen, {electronGen, positronsGen});
 genSuite.SetBckWeights({0.2, 0.1});
@@ -216,9 +282,13 @@ double J(double p, double theta) {
   return A*(B+C);
 };
 
-EMLog::TLogLevel EMLog::ReportingLevel = WARNING;
-
 int main() {
+
+    // EcoMug logs at WARNING by default; raise it to silence warnings, or
+    // lower it to see more. Assign, do not redefine: the header already
+    // defines this member.
+    EMLog::ReportingLevel = EMLog::WARNING;
+
 
     EcoMug muonGen;
     muonGen.SetUseSky();
@@ -229,7 +299,7 @@ int main() {
     electronGen.SetDifferentialFlux(&J);
 
     EcoMug positronsGen(muonGen);
-    electronGen.SetDifferentialFlux(&J);
+    positronsGen.SetDifferentialFlux(&J);
 
     EMMultiGen genSuite(muonGen, {electronGen, positronsGen});
     genSuite.SetBckWeights({0.2, 0.1});
@@ -250,3 +320,28 @@ int main() {
 }
 ```
 
+
+# Tests and examples
+
+Two ROOT macros ship with the library.
+
+`EcoMugExample.C` is a set of worked examples, meant to be read and copied from:
+
+```
+root -l -b -q 'EcoMugExample.C+(1)'        # a detector in a muon flux: rate and live time
+root -l -b -q 'EcoMugExample.C+(2)'        # a two-plane telescope, the slow way and the fast way
+root -l -b -q 'EcoMugExample.C+(3)'        # handing muons to Geant4
+root -l -b -q 'EcoMugExample.C+(4)'        # supplying your own differential flux
+root -l -b -q 'EcoMugExample.C+(5)'        # mixing several particle sources with EMMultiGen
+```
+
+`EcoMugTests.C` is the test suite. Every check has an explicit pass/fail criterion,
+and the macro writes `EcoMugTests.pdf` with the momentum, angular, position and
+charge distributions overlaid on their analytic expectations:
+
+```
+root -l -b -q 'EcoMugTests.C+'             # default statistics
+root -l -b -q 'EcoMugTests.C+(500000)'     # more statistics
+```
+
+The trailing `+` compiles with ACLiC; interpreted, both are far slower.

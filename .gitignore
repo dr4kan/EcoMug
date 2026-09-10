@@ -3,3 +3,9 @@
 .DS_Store
 *.out
 *.cpp
+
+# ROOT ACLiC build products and test suite output
+*_C.d
+*_C.so
+*_C_ACLiC_dict_rdict.pcm
+EcoMugTests.pdf
