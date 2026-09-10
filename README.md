@@ -94,10 +94,9 @@ for (auto event = 0; event < number_of_events; ++event) {
 ### Target-sphere generation
 
 The surfaces above are physical: muons are produced on them and it is left to you to
-discard the ones that miss the apparatus. For a real detector that could be nearly all of
-them.
+discard the ones that miss the apparatus. 
 
-`SetUseTargetSphere()` takes the opposite approach: you declare a sphere enclosing
+`SetUseTargetSphere()` takes the technically different approach: you declare a sphere enclosing
 the apparatus, and every muon is produced on it already pointing through it:
 
 ```
@@ -126,8 +125,7 @@ hence already outside the setup and ready to be handed to a transport code.
 
 #### Why not just use the half-sphere?
 
-`SetUseHSphere()` can be centred on the apparatus too, with the same enclosing
-radius, and it then gives the same rate. The difference is cost. The target sphere
+The half-sphere (`SetUseHSphere()`) can be centred on the apparatus too, and it then gives the same rate. The difference is cost. The target sphere
 is about 2.5 times faster in wall time because its generation factorises: the
 direction is drawn on its own and the position follows from it, so the accept-reject
 works in two variables rather than four. On the dome the two are coupled, because
@@ -138,7 +136,7 @@ chooses the smallest sphere containing the apparatus. For the half-sphere you ha
 to convince yourself that every trajectory you care about actually crosses the dome,
 which depends on where you put the centre. Placing it at the bottom of the
 apparatus, so that the whole setup sits inside the half-ball, is the safe choice,
-but it costs a much larger radius (which advantages `SetUseHSphere()` even more).
+but it costs a much larger radius (which advantages `SetUseTargetSphere()` even more).
 
 
 
