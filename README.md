@@ -267,7 +267,7 @@ for (auto i = 0; i < number_of_events; ++i) {
 }
 ```
 
-In case you want to compile the previous code, please take a look at the following example, which should be compiled with the -std=c++11 flag.
+In case you want to compile the previous code, please take a look at the following example, which should be compiled with the `-std=c++17` flag.
 
 ```
 #include <iostream>
